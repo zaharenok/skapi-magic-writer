@@ -14,9 +14,17 @@ const INK = '#0A0A0A';
 function getJwt() {
   // JWT is auto-extracted from the Skool auth_token HttpOnly cookie by the
   // service worker — the user never enters a token.
-  return new Promise((resolve) =>
-    chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => resolve(res?.token || ''))
-  );
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => {
+      if (chrome.runtime.lastError) {
+        console.error('[skmw] Extension context invalidated:', chrome.runtime.lastError.message);
+        toast('⚠️ Extension reloaded — please close all Skool tabs and reopen them');
+        resolve('');
+        return;
+      }
+      resolve(res?.token || '');
+    });
+  });
 }
 function getSlug() {
   return new Promise((resolve) =>
