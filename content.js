@@ -248,6 +248,7 @@ async function openMagicDialog() {
       <input type="checkbox" id="skmw-title" checked style="width:16px;height:16px;">
       <label for="skmw-title" style="margin:0;text-transform:none;letter-spacing:0;font-weight:600;">Generate a catchy title (first line)</label>
     </div>
+    <label class="skmw-gif" style="margin-top:8px;"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate</button>
@@ -292,21 +293,49 @@ async function openMagicDialog() {
     }
   };
   document.getElementById('skmw-go').addEventListener('click', run);
-  document.getElementById('skmw-regen').addEventListener('click', run);
   document.getElementById('skmw-insert').addEventListener('click', async () => {
     const text = document.getElementById('skmw-out').value.trim();
     if (!text) return;
+    const attachGif = document.getElementById('skmw-magic-gif').checked;
     close();
-    await insertIntoComposer(text);
-    toast('✅ Inserted into the Skool composer');
+    await insertIntoComposer(text, attachGif);
+    toast(attachGif ? '✅ Inserted (+ GIF) into the Skool composer' : '✅ Inserted into the Skool composer');
   });
 
   function showErr(m) { const e = document.getElementById('skmw-err'); e.textContent = m; e.style.display = 'block'; }
   function hideErr() { document.getElementById('skmw-err').style.display = 'none'; }
 }
 
+// Insert a GIF via Skool's built-in picker (search -> random result)
+async function insertGif(searchQuery) {
+  try {
+    const gifBtn = [...document.querySelectorAll('button')].find(
+      (b) => b.getAttribute('aria-label') === 'Add gif' && b.offsetParent !== null
+    );
+    if (!gifBtn) { console.warn('[skmw] GIF button not found'); return false; }
+    gifBtn.click();
+    await sleep(800);
+    const searchInput = document.querySelector('input[data-testid="gif-picker-input"]');
+    if (!searchInput) return false;
+    setInput(searchInput, searchQuery);
+    searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', bubbles: true }));
+    searchInput.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter', code: 'Enter', bubbles: true }));
+    await sleep(2500);
+    const items = document.querySelectorAll('div[aria-label^="gif-item-"]');
+    if (!items.length) { console.warn('[skmw] No GIF results for', searchQuery); return false; }
+    items[Math.floor(Math.random() * items.length)].click();
+    await sleep(1200);
+    const backdrop = document.querySelector('[class*="DropdownBackground"]');
+    if (backdrop) backdrop.click();
+    return true;
+  } catch (e) {
+    console.warn('[skmw] GIF insert failed:', e);
+    return false;
+  }
+}
+
 // Insert a generated post (title = first line, body = rest) into Skool's composer
-async function insertIntoComposer(text) {
+async function insertIntoComposer(text, attachGif = false) {
   // Make sure the composer is open
   if (!findEditor()) {
     const trigger = findText('Write something');
@@ -325,6 +354,12 @@ async function insertIntoComposer(text) {
     if (titleInput) { setInput(titleInput, title); await sleep(200); }
   }
   await typeInto(editor, body);
+
+  if (attachGif) {
+    const term = gifTermFrom(text);
+    const ok = await insertGif(term);
+    if (!ok) toast('⚠️ Could not attach a GIF — post is still inserted');
+  }
 }
 
 // ---------------------------------------------------------------------------
