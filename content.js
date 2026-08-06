@@ -9,6 +9,32 @@
 const API_BASE = 'https://api.skapi.pro';
 const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
+// ---------------------------------------------------------------------------
+function closeComposer() {
+  // Find and click the Cancel button in the Skool composer
+  const selectors = [
+    'button[class*="cancel"]',
+    'button:contains("Cancel")',
+    'div:contains("Cancel")',
+    'button:contains("Go Live")', // Skool sometimes uses "Go Live" for cancel action
+    '[data-testid="cancel-button"]',
+  ];
+  for (const sel of selectors) {
+    const btn = document.querySelector(sel);
+    if (btn) {
+      btn.click();
+      console.log('[skmw] Closed composer via:', sel);
+      return true;
+    }
+  }
+  // Fallback: send Escape key
+  document.activeElement?.blur();
+  const escEvent = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });
+  document.dispatchEvent(escEvent);
+  console.log('[skmw] Sent Escape key to close composer');
+  return true;
+}
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 function getJwt() {
@@ -438,18 +464,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
         <div class="skmw-cal-grid" id="skmw-s-cal"></div>
-        <label style="margin-top:12px;">Time slot</label>
-        <select class="skmw-timeslot" id="skmw-s-slot">
-          <option value="09:00">09:00 — Morning</option>
-          <option value="12:00">12:00 — Midday</option>
-          <option value="15:00">15:00 — Afternoon</option>
-          <option value="18:00">18:00 — Evening</option>
-          <option value="21:00">21:00 — Night</option>
-          <option value="custom">Custom…</option>
-        </select>
-        <div id="skmw-s-custom" style="display:none;margin-top:6px;">
-          <select id="skmw-s-hour"></select> : <select id="skmw-s-min"></select>
-        </div>
+      </div>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
@@ -473,20 +488,10 @@ async function openScheduleDialog(post = null, prefillText = null) {
   document.getElementById('skmw-s-cancel').addEventListener('click', close);
 
   const $dt = document.getElementById('skmw-s-dt');
-  const $slot = document.getElementById('skmw-s-slot');
-  const $hour = document.getElementById('skmw-s-hour');
-  const $min = document.getElementById('skmw-s-min');
-  const $custom = document.getElementById('skmw-s-custom');
   const $past = document.getElementById('skmw-s-past');
-  for (let h = 0; h < 24; h++) $hour.appendChild(new Option(String(h).padStart(2, '0'), h));
-  for (const m of [0, 15, 30, 45]) $min.appendChild(new Option(String(m).padStart(2, '0'), m));
 
-  const SLOTS = ['09:00', '12:00', '15:00', '18:00', '21:00'];
   function syncFromChosen() {
     $dt.value = toDtLocal(chosen);
-    const hm = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
-    if (SLOTS.includes(hm)) { $slot.value = hm; $custom.style.display = 'none'; }
-    else { $slot.value = 'custom'; $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); }
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
@@ -495,15 +500,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); renderCalendar(); }
   });
-  $slot.addEventListener('change', () => {
-    if ($slot.value === 'custom') { $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); return; }
-    $custom.style.display = 'none';
-    const [h, m] = $slot.value.split(':').map(Number);
-    chosen.setHours(h, m, 0, 0); syncFromChosen(); renderCalendar();
-  });
-  const applyCustom = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); syncFromChosen(); };
-  $hour.addEventListener('change', applyCustom);
-  $min.addEventListener('change', applyCustom);
 
   const presets = [
     { label: '⚡ In 1 hour', at: () => new Date(Date.now() + 3600 * 1000) },
@@ -545,6 +541,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
       close();
       toast(isEdit ? '✅ Post updated' : '✅ Post scheduled');
       refreshCalendar();
+      // Close Skool composer after scheduling (not for edits)
+      if (!isEdit) { setTimeout(() => closeComposer(), 300); }
     } catch (e) {
       showErr(e.message);
       btn.disabled = false; btn.textContent = isEdit ? 'Update' : '📅 Schedule';
@@ -600,7 +598,6 @@ function renderMiniCalendar(container, selected, onSelect) {
 }
 function renderUpcoming(container, closeDialog) {
   if (!container) return;
-  container.innerHTML = '<h4>Your scheduled posts</h4>';
   const pending = calState.posts.filter((p) => (p.status || 'pending') === 'pending').sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
   if (!pending.length) { container.innerHTML += '<div style="font-size:12px;color:#9ca3af;padding:4px 8px;">None yet.</div>'; return; }
   pending.slice(0, 6).forEach((p) => {
@@ -716,17 +713,6 @@ function renderEditForm(post, container) {
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
     <div class="skmw-cal-grid" id="skmw-e-cal"></div>
-    <label style="margin-top:12px;">Time slot</label>
-    <select class="skmw-timeslot" id="skmw-e-slot">
-      <option value="09:00">09:00 — Morning</option>
-      <option value="12:00">12:00 — Midday</option>
-      <option value="15:00">15:00 — Afternoon</option>
-      <option value="18:00">18:00 — Evening</option>
-      <option value="21:00">21:00 — Night</option>
-      <option value="custom">Custom…</option>
-    </select>
-    <div id="skmw-e-custom" style="display:none;margin-top:6px;">
-      <select id="skmw-e-hour"></select> : <select id="skmw-e-min"></select>
     </div>
     </div>
     <div class="skmw-edit-actions">
@@ -737,20 +723,10 @@ function renderEditForm(post, container) {
   `;
 
   const $dt = document.getElementById('skmw-e-dt');
-  const $slot = document.getElementById('skmw-e-slot');
-  const $hour = document.getElementById('skmw-e-hour');
-  const $min = document.getElementById('skmw-e-min');
-  const $custom = document.getElementById('skmw-e-custom');
   const $past = document.getElementById('skmw-e-past');
-  for (let h = 0; h < 24; h++) $hour.appendChild(new Option(String(h).padStart(2, '0'), h));
-  for (const m of [0, 15, 30, 45]) $min.appendChild(new Option(String(m).padStart(2, '0'), m));
 
-  const SLOTS = ['09:00', '12:00', '15:00', '18:00', '21:00'];
   function syncFromChosen() {
     $dt.value = toDtLocal(chosen);
-    const hm = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
-    if (SLOTS.includes(hm)) { $slot.value = hm; $custom.style.display = 'none'; }
-    else { $slot.value = 'custom'; $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); }
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
@@ -758,15 +734,6 @@ function renderEditForm(post, container) {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
-  $slot.addEventListener('change', () => {
-    if ($slot.value === 'custom') { $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); return; }
-    $custom.style.display = 'none';
-    const [h, m] = $slot.value.split(':').map(Number);
-    chosen.setHours(h, m, 0, 0); syncFromChosen();
-  });
-  const applyCustom = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); syncFromChosen(); };
-  $hour.addEventListener('change', applyCustom);
-  $min.addEventListener('change', applyCustom);
 
   function renderCalendar() {
     renderMiniCalendar(document.getElementById('skmw-e-cal'), chosen, (d) => {
