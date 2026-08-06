@@ -152,19 +152,41 @@ function injectStyles() {
     .skmw-failed{background:#FEE2E2;color:#991B1B;}
     .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
     .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${INK};color:#fff;padding:12px 22px;border-radius:12px;border:2px solid ${INK};font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
+    /* Compact Schedule button that fits inside Skool's composer button row */
+    .skmw-s-inline{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin:0 6px;line-height:1;transition:background .12s,border-color .12s;}
+    .skmw-s-inline:hover{background:#f9fafb;border-color:#9ca3af;}
+    /* Schedule dialog: preview, presets, calendar, time, upcoming list */
+    .skmw-preview{background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:13px;color:#374151;max-height:90px;overflow:auto;white-space:pre-wrap;line-height:1.4;}
+    .skmw-preview .skmw-preview-empty{color:#9ca3af;font-style:italic;}
+    .skmw-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
+    .skmw-preset:hover{border-color:${BRAND};color:${INK};}
+    .skmw-preset.active{background:${BRAND};border-color:${INK};color:${INK};}
+    .skmw-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
+    .skmw-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#9ca3af;padding:2px 0;}
+    .skmw-cal-day{text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;color:#374151;border:1.5px solid transparent;}
+    .skmw-cal-day:hover{background:#f3f4f6;}
+    .skmw-cal-day.muted{color:#d1d5db;cursor:default;}
+    .skmw-cal-day.muted:hover{background:transparent;}
+    .skmw-cal-day.today{font-weight:800;}
+    .skmw-cal-day.past{color:#e5e7eb;cursor:not-allowed;}
+    .skmw-cal-day.past:hover{background:transparent;}
+    .skmw-cal-day.selected{background:${BRAND};color:${INK};font-weight:800;border-color:${INK};}
+    .skmw-time-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+    .skmw-time-row select{padding:7px 8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;}
+    .skmw-when{font-size:13px;font-weight:700;color:#374151;margin-top:14px;padding:8px 10px;background:#faf5ff;border:1.5px solid #e9d5ff;border-radius:8px;}
+    .skmw-up{margin-top:16px;border-top:1.5px solid #f3f4f6;padding-top:10px;}
+    .skmw-up h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
+    .skmw-up-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12px;}
+    .skmw-up-item:hover{background:#f9fafb;}
+    .skmw-up-item .t{font-weight:700;color:#374151;min-width:96px;}
+    .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+    .skmw-gif{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;}
+    .skmw-gif input{width:16px;height:16px;}
   `;
   const style = el(`<style id="skmw-styles">${css}</style>`);
   document.head.appendChild(style);
 }
-function toast(msg) {
-  const t = el(`<div class="skmw-toast">${msg}</div>`);
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 2600);
-}
-
-// ---------------------------------------------------------------------------
-// INJECT BUTTONS
-// ---------------------------------------------------------------------------
 function injectButtons() {
   const anchor = findComposerAnchor();
   if (!anchor) return;
@@ -185,8 +207,8 @@ function injectScheduleInComposer() {
   const row = postBtn.parentNode;
   if (row.querySelector('.skmw-schedule-compose')) return; // already injected
 
-  const btn = el(`<button class="skmw-btn skmw-schedule-compose">📅 Schedule</button>`);
-  btn.addEventListener('click', async (e) => {
+  const btn = el(`<button class="skmw-s-inline skmw-schedule-compose" type="button">📅 Schedule</button>`);
+  btn.addEventListener('click', (e) => {
     e.stopPropagation();
     // Prefill the schedule dialog from whatever the user just wrote
     const editor = findEditor();
@@ -313,67 +335,119 @@ async function openScheduleDialog(post = null, prefillText = null) {
   dialogOpen = true;
   const slug = await getSlug();
   const isEdit = !!post;
-  const def = post ? new Date(post.scheduled_for) : (() => { const d = new Date(Date.now() + 2 * 3600 * 1000); d.setMinutes(0, 0, 0); return d; })();
-  const defVal = `${def.getFullYear()}-${String(def.getMonth() + 1).padStart(2, '0')}-${String(def.getDate()).padStart(2, '0')}T${String(def.getHours()).padStart(2, '0')}:${String(def.getMinutes()).padStart(2, '0')}`;
 
-  // Pre-fill: explicit text wins (from the Schedule button in the composer),
-  // otherwise fall back to whatever is in the open composer.
-  let prefill = prefillText || '';
-  if (!isEdit && !prefill) {
-    const editor = findEditor();
-    if (editor) prefill = (editor.textContent || '').trim();
-  }
+  // Content: edit = editable textarea; new = read-only preview from the composer
+  let content = '';
+  if (isEdit) content = post.content || '';
+  else if (prefillText) content = prefillText;
+  else { const ed = findEditor(); content = ed ? ed.textContent.trim() : ''; }
+
+  let chosen = post ? new Date(post.scheduled_for) : defaultScheduleTime();
+  if (isNaN(chosen.getTime())) chosen = defaultScheduleTime();
+  let gifOn = !!(isEdit ? post.gif_search : false);
+
+  const previewHtml = content
+    ? escapeHtml(content.slice(0, 280)) + (content.length > 280 ? '…' : '')
+    : '<span class="skmw-preview-empty">Nothing in the composer yet — write your post first.</span>';
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
-    <p class="sub">Published automatically at the chosen time by the SKapi server.</p>
-    <label>Post content</label>
-    <textarea id="skmw-s-content" placeholder="Write your post...">${post?.content || prefill}</textarea>
-    <label>Schedule date &amp; time</label>
-    <input type="text" id="skmw-s-time" value="${defVal}" placeholder="YYYY-MM-DDTHH:MM">
+    <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
+    ${isEdit
+      ? `<label>Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
+      : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div>`}
+    <label class="skmw-gif"><input type="checkbox" id="skmw-s-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
+    <label style="margin-top:14px;">Publish at</label>
+    <div class="skmw-presets" id="skmw-s-presets"></div>
+    <div class="skmw-cal" id="skmw-s-cal"></div>
+    <div class="skmw-time-row">
+      <span style="font-size:12px;color:#6b7280;">Time</span>
+      <select id="skmw-s-hour"></select><span>:</span><select id="skmw-s-min"></select>
+    </div>
+    <div class="skmw-when" id="skmw-s-when"></div>
+    ${!isEdit ? '<div class="skmw-up" id="skmw-s-up"></div>' : ''}
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-s-cancel">Cancel</button>
       ${isEdit ? '<button class="skmw-btn skmw-btn-ghost" id="skmw-s-delete" style="margin-right:auto;border-color:#dc2626;color:#dc2626;">🗑 Delete</button>' : ''}
-      <button class="skmw-btn skmw-btn-pink" id="skmw-s-save">${isEdit ? 'Update' : 'Schedule'}</button>
+      <button class="skmw-btn skmw-btn-pink" id="skmw-s-save">${isEdit ? 'Update' : '📅 Schedule'}</button>
     </div>
     <div class="skmw-err" id="skmw-s-err"></div>
   </div>`);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
-  setTimeout(() => document.getElementById('skmw-s-content').focus(), 60);
+  if (isEdit) setTimeout(() => document.getElementById('skmw-s-content')?.focus(), 60);
 
   const close = () => { overlay.remove(); dialogOpen = false; };
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('skmw-s-cancel').addEventListener('click', close);
 
-  const save = async () => {
-    const content = document.getElementById('skmw-s-content').value.trim();
-    const when = document.getElementById('skmw-s-time').value;
-    if (!content) return showErr('Post content is empty.');
-    if (!when) return showErr('Pick a date and time.');
-    const iso = new Date(when).toISOString();
-    if (isNaN(new Date(iso).getTime())) return showErr('Invalid date/time format.');
+  // ---- time controls ----
+  const $hour = document.getElementById('skmw-s-hour');
+  const $min = document.getElementById('skmw-s-min');
+  for (let h = 0; h < 24; h++) $hour.appendChild(new Option(String(h).padStart(2, '0'), h));
+  for (const m of [0, 15, 30, 45]) $min.appendChild(new Option(String(m).padStart(2, '0'), m));
+  $hour.value = chosen.getHours();
+  $min.value = [0, 15, 30, 45].reduce((best, m) => Math.abs(m - chosen.getMinutes()) < Math.abs(best - chosen.getMinutes()) ? m : best, 0);
+  const applyTime = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); renderWhen(); };
+  $hour.addEventListener('change', applyTime);
+  $min.addEventListener('change', applyTime);
 
+  // ---- presets ----
+  const presets = [
+    { label: '⚡ In 1 hour', at: () => new Date(Date.now() + 3600 * 1000) },
+    { label: '🌅 Today 18:00', at: () => atToday(18, 0) },
+    { label: '☀️ Tomorrow 9:00', at: () => atDayOffset(1, 9, 0) },
+    { label: '📆 Tomorrow 12:00', at: () => atDayOffset(1, 12, 0) },
+    { label: '🌙 Tomorrow 18:00', at: () => atDayOffset(1, 18, 0) },
+    { label: '➕ In 1 week', at: () => new Date(Date.now() + 7 * 24 * 3600 * 1000) },
+  ];
+  const $presets = document.getElementById('skmw-s-presets');
+  presets.forEach((p) => {
+    const b = el(`<button class="skmw-preset" type="button">${p.label}</button>`);
+    b.addEventListener('click', () => { chosen = p.at(); $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); renderCalendar(); renderWhen(); });
+    $presets.appendChild(b);
+  });
+
+  // ---- calendar ----
+  function renderCalendar() { renderMiniCalendar(document.getElementById('skmw-s-cal'), chosen, (d) => { chosen = d; chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); renderCalendar(); renderWhen(); }); }
+  function renderWhen() {
+    document.getElementById('skmw-s-when').textContent =
+      '⏰ ' + chosen.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  renderCalendar();
+  renderWhen();
+
+  // ---- upcoming list (only for new posts) ----
+  if (!isEdit) renderUpcoming(document.getElementById('skmw-s-up'), close);
+
+  // ---- save ----
+  document.getElementById('skmw-s-save').addEventListener('click', async () => {
+    const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
+    if (!finalContent) return showErr('Post content is empty.');
+    if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
+    gifOn = document.getElementById('skmw-s-gif').checked;
     const btn = document.getElementById('skmw-s-save');
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = { content, scheduled_for: iso, community_slug: slug };
-      if (isEdit && post?.id) {
-        await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
-      } else {
-        await apiRequest('/scheduled-posts', { method: 'POST', body });
-      }
+      const body = {
+        content: finalContent,
+        scheduled_for: chosen.toISOString(),
+        community_slug: slug,
+        community_url: location.href,
+        gif_search: gifOn ? gifTermFrom(finalContent) : null,
+      };
+      if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
+      else await apiRequest('/scheduled-posts', { method: 'POST', body });
       close();
       toast(isEdit ? '✅ Post updated' : '✅ Post scheduled');
       refreshCalendar();
     } catch (e) {
       showErr(e.message);
-      btn.disabled = false; btn.textContent = isEdit ? 'Update' : 'Schedule';
+      btn.disabled = false; btn.textContent = isEdit ? 'Update' : '📅 Schedule';
     }
-  };
-  document.getElementById('skmw-s-save').addEventListener('click', save);
+  });
   if (isEdit) {
     document.getElementById('skmw-s-delete').addEventListener('click', async () => {
       if (!confirm('Delete this scheduled post?')) return;
@@ -383,6 +457,55 @@ async function openScheduleDialog(post = null, prefillText = null) {
   }
   function showErr(m) { const e = document.getElementById('skmw-s-err'); e.textContent = m; e.style.display = 'block'; }
   function hideErr() { document.getElementById('skmw-s-err').style.display = 'none'; }
+}
+
+// ---- schedule dialog helpers ----
+function defaultScheduleTime() { const d = new Date(Date.now() + 2 * 3600 * 1000); d.setMinutes(0, 0, 0); return d; }
+function atToday(h, m) { const d = new Date(); d.setHours(h, m, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); return d; }
+function atDayOffset(days, h, m) { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(h, m, 0, 0); return d; }
+function nearestMin(m) { return [0, 15, 30, 45].reduce((b, x) => Math.abs(x - m) < Math.abs(b - m) ? x : b, 0); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function gifTermFrom(text) {
+  const stop = new Set(['this', 'that', 'with', 'from', 'have', 'been', 'what', 'when', 'post', 'about', 'more', 'some', 'into', 'just', 'also', 'like', 'than', 'then', 'them', 'they', 'will', 'your', 'very', 'the', 'and', 'for', 'are', 'you', 'how', 'why']);
+  const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
+  return words.find((w) => !stop.has(w)) || 'success';
+}
+function renderMiniCalendar(container, selected, onSelect) {
+  if (!container) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const view = new Date(selected.getFullYear(), selected.getMonth(), 1);
+  const firstDow = (view.getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+  let html = '<div class="skmw-cal-dow">Mo</div><div class="skmw-cal-dow">Tu</div><div class="skmw-cal-dow">We</div><div class="skmw-cal-dow">Th</div><div class="skmw-cal-dow">Fr</div><div class="skmw-cal-dow">Sa</div><div class="skmw-cal-dow">Su</div>';
+  for (let i = 0; i < firstDow; i++) html += '<div class="skmw-cal-day muted"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(view.getFullYear(), view.getMonth(), d);
+    const past = date < today;
+    const isToday = date.getTime() === today.getTime();
+    const isSel = date.getFullYear() === selected.getFullYear() && date.getMonth() === selected.getMonth() && date.getDate() === selected.getDate();
+    const cls = 'skmw-cal-day' + (past ? ' past' : '') + (isToday ? ' today' : '') + (isSel ? ' selected' : '');
+    html += `<div class="${cls}" data-d="${d}">${d}</div>`;
+  }
+  container.innerHTML = html;
+  container.querySelectorAll('.skmw-cal-day:not(.muted):not(.past)').forEach((node) => {
+    node.addEventListener('click', () => {
+      const d = parseInt(node.dataset.d);
+      const picked = new Date(view.getFullYear(), view.getMonth(), d, selected.getHours(), selected.getMinutes());
+      onSelect(picked);
+    });
+  });
+}
+function renderUpcoming(container, closeDialog) {
+  if (!container) return;
+  container.innerHTML = '<h4>Your scheduled posts</h4>';
+  const pending = calState.posts.filter((p) => (p.status || 'pending') === 'pending').sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
+  if (!pending.length) { container.innerHTML += '<div style="font-size:12px;color:#9ca3af;padding:4px 8px;">None yet.</div>'; return; }
+  pending.slice(0, 6).forEach((p) => {
+    const d = new Date(p.scheduled_for);
+    const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
+    item.addEventListener('click', () => { closeDialog(); setTimeout(() => openScheduleDialog(p), 50); });
+    container.appendChild(item);
+  });
 }
 
 // ---------------------------------------------------------------------------
