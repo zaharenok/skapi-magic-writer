@@ -285,6 +285,7 @@ function injectScheduleInComposer() {
   if (!actionRow || actionRow.querySelector('.skmw-schedule-compose')) return;
 
   const btn = el(`<button class="skmw-s-inline skmw-schedule-compose" type="button">📅 Schedule</button>`);
+  btn.addEventListener('click', (e) => {
     e.stopPropagation();
     // Save composer text to localStorage in case user cancels
     const editor = findEditor();
