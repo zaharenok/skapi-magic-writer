@@ -286,8 +286,8 @@ async function openMagicDialog() {
     <p class="sub">Paste raw thoughts — AI turns them into a post ready to drop into Skool.</p>
     <label>Your thoughts</label>
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
-    <label class="skmw-gif" style="margin-top:10px;"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
-    <label class="skmw-gif" style="margin-top:8px;"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
+    <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
+    <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate</button>
