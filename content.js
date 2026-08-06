@@ -200,6 +200,11 @@ function injectStyles() {
     .skmw-dt:focus{outline:none;border-color:${BRAND};}
     .skmw-timeslot{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;margin-top:6px;}
     .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
+    .skmw-edit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+    .skmw-btn-back{background:none;border:none;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;}
+    .skmw-btn-back:hover{background:#f3f4f6;color:${INK};}
+    .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
+    .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
     @media (max-width:680px){.skmw-sched-cols{flex-direction:column;}.skmw-sched-right{border-left:none;border-top:1.5px solid #f3f4f6;padding-left:0;padding-top:16px;}}
   `;
   const style = el(`<style id="skmw-styles">${css}</style>`);
@@ -676,10 +681,129 @@ function renderList() {
     node.addEventListener('click', () => {
       const post = calState.posts.find((p) => String(p.id) === node.dataset.id);
       if (post && (post.status || 'pending') === 'pending') {
-        document.querySelector('.skmw-pop')?.remove();
-        openScheduleDialog(post);
+        renderEditForm(post, list);
       }
     });
+  });
+}
+
+// ---------------------------------------------------------------------------
+function renderEditForm(post, container) {
+  const content = post.content || '';
+  const chosen = new Date(post.scheduled_for);
+  if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
+  const gifOn = !!post.gif_search;
+  const minDt = toDtLocal(new Date());
+
+  container.innerHTML = `
+    <div class="skmw-edit-header">
+      <button class="skmw-btn-back" id="skmw-edit-back">← Back to list</button>
+      <h3>✏️ Edit scheduled post</h3>
+    </div>
+    <label>Post content</label>
+    <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
+    <label style="margin-top:14px;">Publish at</label>
+    <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+    <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
+    <div class="skmw-cal-grid" id="skmw-e-cal"></div>
+    <label style="margin-top:12px;">Time slot</label>
+    <select class="skmw-timeslot" id="skmw-e-slot">
+      <option value="09:00">09:00 — Morning</option>
+      <option value="12:00">12:00 — Midday</option>
+      <option value="15:00">15:00 — Afternoon</option>
+      <option value="18:00">18:00 — Evening</option>
+      <option value="21:00">21:00 — Night</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div id="skmw-e-custom" style="display:none;margin-top:6px;">
+      <select id="skmw-e-hour"></select> : <select id="skmw-e-min"></select>
+    </div>
+    <label class="skmw-gif"><input type="checkbox" id="skmw-e-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
+    <div class="skmw-edit-actions">
+      <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
+      <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
+    </div>
+    <div class="skmw-err" id="skmw-e-err"></div>
+  `;
+
+  const $dt = document.getElementById('skmw-e-dt');
+  const $slot = document.getElementById('skmw-e-slot');
+  const $hour = document.getElementById('skmw-e-hour');
+  const $min = document.getElementById('skmw-e-min');
+  const $custom = document.getElementById('skmw-e-custom');
+  const $past = document.getElementById('skmw-e-past');
+  for (let h = 0; h < 24; h++) $hour.appendChild(new Option(String(h).padStart(2, '0'), h));
+  for (const m of [0, 15, 30, 45]) $min.appendChild(new Option(String(m).padStart(2, '0'), m));
+
+  const SLOTS = ['09:00', '12:00', '15:00', '18:00', '21:00'];
+  function syncFromChosen() {
+    $dt.value = toDtLocal(chosen);
+    const hm = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
+    if (SLOTS.includes(hm)) { $slot.value = hm; $custom.style.display = 'none'; }
+    else { $slot.value = 'custom'; $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); }
+    $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
+  }
+
+  $dt.addEventListener('change', () => {
+    const v = new Date($dt.value);
+    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
+  });
+  $slot.addEventListener('change', () => {
+    if ($slot.value === 'custom') { $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); return; }
+    $custom.style.display = 'none';
+    const [h, m] = $slot.value.split(':').map(Number);
+    chosen.setHours(h, m, 0, 0); syncFromChosen();
+  });
+  const applyCustom = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); syncFromChosen(); };
+  $hour.addEventListener('change', applyCustom);
+  $min.addEventListener('change', applyCustom);
+
+  function renderCalendar() {
+    renderMiniCalendar(document.getElementById('skmw-e-cal'), chosen, (d) => {
+      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0);
+      chosen = d; syncFromChosen(); renderCalendar();
+    });
+  }
+  renderCalendar();
+  syncFromChosen();
+
+  document.getElementById('skmw-edit-back').addEventListener('click', () => {
+    renderList();
+  });
+
+  const showErr = (msg) => { const e = document.getElementById('skmw-e-err'); e.textContent = msg; e.style.display = 'block'; };
+  const hideErr = () => { document.getElementById('skmw-e-err').style.display = 'none'; };
+
+  document.getElementById('skmw-e-save').addEventListener('click', async () => {
+    const finalContent = document.getElementById('skmw-e-content').value.trim();
+    if (!finalContent) return showErr('Post content is empty.');
+    if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
+    const gifOn = document.getElementById('skmw-e-gif').checked;
+    const btn = document.getElementById('skmw-e-save');
+    btn.disabled = true; btn.textContent = '⏳ Saving...';
+    hideErr();
+    try {
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: gifOn ? gifTermFrom(finalContent) : null };
+      await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
+      toast('✅ Post updated');
+      await loadScheduled();
+      renderList();
+    } catch (e) {
+      showErr(e.message || 'Failed to update post');
+      btn.disabled = false; btn.textContent = 'Update';
+    }
+  });
+
+  document.getElementById('skmw-e-delete').addEventListener('click', async () => {
+    if (!confirm('Delete this scheduled post?')) return;
+    try {
+      await apiRequest('/scheduled-posts', { method: 'DELETE', body: { id: post.id } });
+      toast('🗑 Post deleted');
+      await loadScheduled();
+      renderList();
+    } catch (e) {
+      showErr(e.message || 'Failed to delete post');
+    }
   });
 }
 
