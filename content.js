@@ -162,7 +162,7 @@ function injectStyles() {
     .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
     .skmw-preset:hover{border-color:${BRAND};color:${INK};}
     .skmw-preset.active{background:${BRAND};border-color:${INK};color:${INK};}
-    .skmw-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
+    .skmw-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
     .skmw-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#9ca3af;padding:2px 0;}
     .skmw-cal-day{text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;color:#374151;border:1.5px solid transparent;}
     .skmw-cal-day:hover{background:#f3f4f6;}
@@ -360,7 +360,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
     <label class="skmw-gif"><input type="checkbox" id="skmw-s-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
     <label style="margin-top:14px;">Publish at</label>
     <div class="skmw-presets" id="skmw-s-presets"></div>
-    <div class="skmw-cal" id="skmw-s-cal"></div>
+    <div class="skmw-cal-grid" id="skmw-s-cal"></div>
     <div class="skmw-time-row">
       <span style="font-size:12px;color:#6b7280;">Time</span>
       <select id="skmw-s-hour"></select><span>:</span><select id="skmw-s-min"></select>
