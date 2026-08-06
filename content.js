@@ -181,7 +181,7 @@ function injectStyles() {
     .skmw-up-item:hover{background:#f9fafb;}
     .skmw-up-item .t{font-weight:700;color:#374151;min-width:96px;}
     .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-    .skmw-gif{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;line-height:1.4;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
+    .skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
     .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:${BRAND};cursor:pointer;}
     /* Wide schedule modal: two columns so it grows horizontally, not vertically */
     .skmw-modal-wide{max-width:780px;}
