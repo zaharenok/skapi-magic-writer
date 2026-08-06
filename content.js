@@ -454,6 +454,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
+    ${!isEdit ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Important:</strong> Only text content is saved. If you added images/media in the composer, they won\'t be included in the scheduled post — you\'ll need to re-add them when it publishes.</div>' : ''}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         ${isEdit
