@@ -1,28 +1,17 @@
-// SKapi Magic Writer — options page
+// SKapi Magic Writer — options page (slug only; JWT is auto from cookie)
 
-const $jwt = document.getElementById('jwt');
 const $slug = document.getElementById('slug');
 const $status = document.getElementById('status');
 const $save = document.getElementById('save');
 
-chrome.storage.local.get(['jwtToken', 'communitySlug'], (res) => {
-  if (res.jwtToken) $jwt.value = res.jwtToken;
+chrome.storage.local.get(['communitySlug'], (res) => {
   if (res.communitySlug) $slug.value = res.communitySlug;
 });
 
 $save.addEventListener('click', () => {
-  const jwtToken = $jwt.value.trim();
   const communitySlug = $slug.value.trim();
-  if (!jwtToken) {
-    setStatus('JWT token is required', 'err');
-    return;
-  }
-  chrome.storage.local.set({ jwtToken, communitySlug }, () => {
-    setStatus('✅ Saved — open a Skool community and use the ✨ / 📅 buttons', 'ok');
+  chrome.storage.local.set({ communitySlug }, () => {
+    $status.textContent = '✅ Saved — open a Skool community and use the ✨ / 📅 buttons';
+    $status.className = 'ok';
   });
 });
-
-function setStatus(text, cls) {
-  $status.textContent = text;
-  $status.className = cls || '';
-}

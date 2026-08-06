@@ -11,10 +11,12 @@ const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
 
 // ---------------------------------------------------------------------------
-// CONFIG / STORAGE
-// ---------------------------------------------------------------------------
 function getJwt() {
-  return new Promise((resolve) => chrome.storage.local.get(['jwtToken'], (r) => resolve(r.jwtToken || '')));
+  // JWT is auto-extracted from the Skool auth_token HttpOnly cookie by the
+  // service worker — the user never enters a token.
+  return new Promise((resolve) =>
+    chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => resolve(res?.token || ''))
+  );
 }
 function getSlug() {
   return new Promise((resolve) =>
@@ -30,7 +32,7 @@ async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) {
     const jwt = await getJwt();
-    if (!jwt) throw new Error('No JWT token — open extension Options and paste your Skool JWT.');
+    if (!jwt) throw new Error('No Skool session found — log in to skool.com and reopen this page.');
     headers['Authorization'] = `Bearer ${jwt}`;
   }
   const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });

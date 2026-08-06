@@ -19,15 +19,18 @@ Front-end only. All AI generation and scheduling go through the shared backend:
 - `POST https://api.skapi.pro/ai/generate` — text generation
 - `GET / POST / PUT / DELETE https://api.skapi.pro/scheduled-posts` — scheduler CRUD
 
-The user's Skool JWT + default community slug are stored in `chrome.storage.local` and configured on the **Options** page (opened automatically on install).
+The user's Skool session token is read **automatically** from the `auth_token`
+HttpOnly cookie on `.skool.com` (via the `cookies` permission) — **no token is
+pasted anywhere**. A default community slug is the only optional Options entry
+(auto-detected from the current URL otherwise).
 
 ## Install (Load unpacked)
 
 1. Go to `chrome://extensions/`
 2. Enable **Developer mode**
 3. **Load unpacked** → select this folder
-4. Open the extension's **Options**, paste your Skool JWT and (optionally) a default community slug
-5. Open a Skool community — the ✨ / 📅 buttons appear next to the composer
+4. (Optional) Open the extension's **Options** to set a default community slug
+5. Make sure you're logged in to **skool.com**, then open a community — the ✨ / 📅 buttons appear next to the composer
 
 ## Status
 
