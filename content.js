@@ -356,7 +356,7 @@ async function openMagicDialog() {
     loading.style.display = 'block';
     hideErr();
     try {
-      const data = await apiRequest('/ai/generate', { method: 'POST', body: { prompt }, auth: false });
+      const data = await apiRequest('/ai/generate', { method: 'POST', body: { prompt } });
       if (!data.success || !data.text) throw new Error(data.error || 'No text returned');
       const attachGif = document.getElementById('skmw-magic-gif').checked;
    close();
