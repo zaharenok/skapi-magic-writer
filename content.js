@@ -390,37 +390,54 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const slug = await getSlug();
   const isEdit = !!post;
 
-  // Content: edit = editable textarea; new = read-only preview from the composer
   let content = '';
   if (isEdit) content = post.content || '';
   else if (prefillText) content = prefillText;
   else { const ed = findEditor(); content = ed ? ed.textContent.trim() : ''; }
 
-  let chosen = post ? new Date(post.scheduled_for) : defaultScheduleTime();
-  if (isNaN(chosen.getTime())) chosen = defaultScheduleTime();
+  // Default: tomorrow 09:00 for new posts (a sensible posting slot)
+  let chosen = post ? new Date(post.scheduled_for) : atDayOffset(1, 9, 0);
+  if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
   let gifOn = !!(isEdit ? post.gif_search : false);
 
   const previewHtml = content
     ? escapeHtml(content.slice(0, 280)) + (content.length > 280 ? '…' : '')
     : '<span class="skmw-preview-empty">Nothing in the composer yet — write your post first.</span>';
+  const minDt = toDtLocal(new Date());
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
-  const modal = el(`<div class="skmw-modal">
+  const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
-    ${isEdit
-      ? `<label>Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
-      : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div>`}
-    <label class="skmw-gif"><input type="checkbox" id="skmw-s-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
-    <label style="margin-top:14px;">Publish at</label>
-    <div class="skmw-presets" id="skmw-s-presets"></div>
-    <div class="skmw-cal-grid" id="skmw-s-cal"></div>
-    <div class="skmw-time-row">
-      <span style="font-size:12px;color:#6b7280;">Time</span>
-      <select id="skmw-s-hour"></select><span>:</span><select id="skmw-s-min"></select>
+    <div class="skmw-sched-cols">
+      <div class="skmw-sched-left">
+        ${isEdit
+          ? `<label>Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
+          : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div>`}
+        <label style="margin-top:14px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
+        <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+        <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
+        <div class="skmw-cal-grid" id="skmw-s-cal"></div>
+        <label style="margin-top:12px;">Time slot</label>
+        <select class="skmw-timeslot" id="skmw-s-slot">
+          <option value="09:00">09:00 — Morning</option>
+          <option value="12:00">12:00 — Midday</option>
+          <option value="15:00">15:00 — Afternoon</option>
+          <option value="18:00">18:00 — Evening</option>
+          <option value="21:00">21:00 — Night</option>
+          <option value="custom">Custom…</option>
+        </select>
+        <div id="skmw-s-custom" style="display:none;margin-top:6px;">
+          <select id="skmw-s-hour"></select> : <select id="skmw-s-min"></select>
+        </div>
+        <label class="skmw-gif"><input type="checkbox" id="skmw-s-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
+      </div>
+      <div class="skmw-sched-right">
+        <h4>Quick schedule</h4>
+        <div class="skmw-presets" id="skmw-s-presets"></div>
+        ${!isEdit ? '<h4>Your scheduled posts</h4><div id="skmw-s-up"></div>' : ''}
+      </div>
     </div>
-    <div class="skmw-when" id="skmw-s-when"></div>
-    ${!isEdit ? '<div class="skmw-up" id="skmw-s-up"></div>' : ''}
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-s-cancel">Cancel</button>
       ${isEdit ? '<button class="skmw-btn skmw-btn-ghost" id="skmw-s-delete" style="margin-right:auto;border-color:#dc2626;color:#dc2626;">🗑 Delete</button>' : ''}
@@ -436,18 +453,39 @@ async function openScheduleDialog(post = null, prefillText = null) {
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('skmw-s-cancel').addEventListener('click', close);
 
-  // ---- time controls ----
+  const $dt = document.getElementById('skmw-s-dt');
+  const $slot = document.getElementById('skmw-s-slot');
   const $hour = document.getElementById('skmw-s-hour');
   const $min = document.getElementById('skmw-s-min');
+  const $custom = document.getElementById('skmw-s-custom');
+  const $past = document.getElementById('skmw-s-past');
   for (let h = 0; h < 24; h++) $hour.appendChild(new Option(String(h).padStart(2, '0'), h));
   for (const m of [0, 15, 30, 45]) $min.appendChild(new Option(String(m).padStart(2, '0'), m));
-  $hour.value = chosen.getHours();
-  $min.value = [0, 15, 30, 45].reduce((best, m) => Math.abs(m - chosen.getMinutes()) < Math.abs(best - chosen.getMinutes()) ? m : best, 0);
-  const applyTime = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); renderWhen(); };
-  $hour.addEventListener('change', applyTime);
-  $min.addEventListener('change', applyTime);
 
-  // ---- presets ----
+  const SLOTS = ['09:00', '12:00', '15:00', '18:00', '21:00'];
+  function syncFromChosen() {
+    $dt.value = toDtLocal(chosen);
+    const hm = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
+    if (SLOTS.includes(hm)) { $slot.value = hm; $custom.style.display = 'none'; }
+    else { $slot.value = 'custom'; $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); }
+    $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
+  }
+
+  // Editable datetime-local — typing here updates everything
+  $dt.addEventListener('change', () => {
+    const v = new Date($dt.value);
+    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); renderCalendar(); }
+  });
+  $slot.addEventListener('change', () => {
+    if ($slot.value === 'custom') { $custom.style.display = 'block'; $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); return; }
+    $custom.style.display = 'none';
+    const [h, m] = $slot.value.split(':').map(Number);
+    chosen.setHours(h, m, 0, 0); syncFromChosen(); renderCalendar();
+  });
+  const applyCustom = () => { chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); syncFromChosen(); };
+  $hour.addEventListener('change', applyCustom);
+  $min.addEventListener('change', applyCustom);
+
   const presets = [
     { label: '⚡ In 1 hour', at: () => new Date(Date.now() + 3600 * 1000) },
     { label: '🌅 Today 18:00', at: () => atToday(18, 0) },
@@ -459,23 +497,21 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const $presets = document.getElementById('skmw-s-presets');
   presets.forEach((p) => {
     const b = el(`<button class="skmw-preset" type="button">${p.label}</button>`);
-    b.addEventListener('click', () => { chosen = p.at(); $hour.value = chosen.getHours(); $min.value = nearestMin(chosen.getMinutes()); renderCalendar(); renderWhen(); });
+    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); renderCalendar(); });
     $presets.appendChild(b);
   });
 
-  // ---- calendar ----
-  function renderCalendar() { renderMiniCalendar(document.getElementById('skmw-s-cal'), chosen, (d) => { chosen = d; chosen.setHours(parseInt($hour.value), parseInt($min.value), 0, 0); renderCalendar(); renderWhen(); }); }
-  function renderWhen() {
-    document.getElementById('skmw-s-when').textContent =
-      '⏰ ' + chosen.toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  function renderCalendar() {
+    renderMiniCalendar(document.getElementById('skmw-s-cal'), chosen, (d) => {
+      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0); // keep the time when changing the day
+      chosen = d; syncFromChosen(); renderCalendar();
+    });
   }
   renderCalendar();
-  renderWhen();
+  syncFromChosen();
 
-  // ---- upcoming list (only for new posts) ----
   if (!isEdit) renderUpcoming(document.getElementById('skmw-s-up'), close);
 
-  // ---- save ----
   document.getElementById('skmw-s-save').addEventListener('click', async () => {
     const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
     if (!finalContent) return showErr('Post content is empty.');
@@ -485,13 +521,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = {
-        content: finalContent,
-        scheduled_for: chosen.toISOString(),
-        community_slug: slug,
-        community_url: location.href,
-        gif_search: gifOn ? gifTermFrom(finalContent) : null,
-      };
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifOn ? gifTermFrom(finalContent) : null };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
       close();
@@ -515,6 +545,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
 
 // ---- schedule dialog helpers ----
 function defaultScheduleTime() { const d = new Date(Date.now() + 2 * 3600 * 1000); d.setMinutes(0, 0, 0); return d; }
+function toDtLocal(d) { const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; }
 function atToday(h, m) { const d = new Date(); d.setHours(h, m, 0, 0); if (d < new Date()) d.setDate(d.getDate() + 1); return d; }
 function atDayOffset(days, h, m) { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(h, m, 0, 0); return d; }
 function nearestMin(m) { return [0, 15, 30, 45].reduce((b, x) => Math.abs(x - m) < Math.abs(b - m) ? x : b, 0); }
