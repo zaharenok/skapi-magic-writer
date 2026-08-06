@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SKapi Magic Writer — Settings</title>
+  <style>
+    :root { --pink: #FF90E8; --ink: #0A0A0A; --bg: #FAFAFA; --muted: #6b7280; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding: 40px 20px; }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    p.sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+    label { display: block; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 6px; }
+    input, textarea { width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-family: ui-monospace, monospace; }
+    input:focus, textarea:focus { outline: none; border-color: var(--pink); }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    button { margin-top: 20px; padding: 12px 20px; background: var(--pink); color: var(--ink); border: 2px solid var(--ink); border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; }
+    #status { margin-top: 12px; font-size: 14px; font-weight: 600; min-height: 20px; }
+    .ok { color: #16a34a; }
+    .err { color: #dc2626; }
+    code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>✨ SKapi Magic Writer</h1>
+    <p class="sub">Experimental writer + scheduler. No popup — buttons appear inside Skool next to the composer.</p>
+
+    <label for="jwt">Skool JWT Token</label>
+    <textarea id="jwt" rows="3" placeholder="eyJhbGciOiJIUzI1NiIs..."></textarea>
+    <div class="hint">Found in the main SKapi extension's settings, or extract from your logged-in Skool session. Stored locally only.</div>
+
+    <label for="slug">Community Slug</label>
+    <input id="slug" type="text" placeholder="ai-pays-my-bills-7018">
+    <div class="hint">Default community to schedule posts into. Auto-detected from the current Skool URL if left empty.</div>
+
+    <button id="save">💾 Save</button>
+    <div id="status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

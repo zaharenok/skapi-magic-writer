@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "SKapi Magic Writer",
+  "version": "0.1.0",
+  "description": "Magic post writer + scheduler for Skool — experimental, UI lives inside Skool (no popup).",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.skool.com/*",
+    "https://api.skapi.pro/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "SKapi Magic Writer — open Skool and use the ✨ / 📅 buttons",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.skool.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
