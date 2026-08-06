@@ -285,14 +285,19 @@ function injectScheduleInComposer() {
   if (!actionRow || actionRow.querySelector('.skmw-schedule-compose')) return;
 
   const btn = el(`<button class="skmw-s-inline skmw-schedule-compose" type="button">📅 Schedule</button>`);
-  btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    // Prefill the schedule dialog from whatever the user just wrote
+    // Save composer text to localStorage in case user cancels
     const editor = findEditor();
     const titleInput = findTitleInput();
     const body = editor ? editor.textContent.trim() : '';
     const title = titleInput ? titleInput.value.trim() : '';
     const fullText = (title ? title + '\n\n' : '') + body;
+    
+    // Save to localStorage for restoration on cancel
+    const communityKey = location.href;
+    localStorage.setItem('skmw_saved_title_' + communityKey, title);
+    localStorage.setItem('skmw_saved_body_' + communityKey, body);
+    
     openScheduleDialog(null, fullText);
   });
   // Insert right after Cancel: [Cancel] [📅 Schedule] [Post wrapper]
@@ -481,9 +486,40 @@ async function openScheduleDialog(post = null, prefillText = null) {
       <button class="skmw-btn skmw-btn-pink" id="skmw-s-save">${isEdit ? 'Update' : '📅 Schedule'}</button>
     </div>
     <div class="skmw-err" id="skmw-s-err"></div>
-  </div>`);
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
+  let postCreated = false;
+  const close = (success = false) => {
+    overlay.remove();
+    dialogOpen = false;
+    
+    // If dialog was cancelled (not saved), restore the composer text
+    if (!success && !isEdit) {
+      const communityKey = location.href;
+      const savedTitle = localStorage.getItem('skmw_saved_title_' + communityKey) || '';
+      const savedBody = localStorage.getItem('skmw_saved_body_' + communityKey) || '';
+      
+      if (savedTitle || savedBody) {
+        setTimeout(() => {
+          const titleInput = findTitleInput();
+          const editor = findEditor();
+          if (titleInput && savedTitle) {
+            setInput(titleInput, savedTitle);
+          }
+          if (editor && savedBody) {
+            typeInto(editor, savedBody);
+          }
+        }, 100);
+      }
+    }
+    
+    // If post was created, clear saved text
+    if (success) {
+      const communityKey = location.href;
+      localStorage.removeItem('skmw_saved_title_' + communityKey);
+      localStorage.removeItem('skmw_saved_body_' + communityKey);
+    }
+  };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+  document.getElementById('skmw-s-cancel').addEventListener('click', () => close(false));
   if (isEdit) setTimeout(() => document.getElementById('skmw-s-content')?.focus(), 60);
 
   const close = () => { overlay.remove(); dialogOpen = false; };
@@ -541,7 +577,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
       const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: null };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
-      close();
+      close(true);
       toast(isEdit ? '✅ Post updated' : '✅ Post scheduled');
       refreshCalendar();
       // Close Skool composer after scheduling (not for edits)
@@ -606,7 +642,7 @@ function renderUpcoming(container, closeDialog) {
   pending.slice(0, 6).forEach((p) => {
     const d = new Date(p.scheduled_for);
     const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
-    item.addEventListener('click', () => { closeDialog(); setTimeout(() => openScheduleDialog(p), 50); });
+    item.addEventListener('click', () => { closeDialog(false); setTimeout(() => openScheduleDialog(p), 50); });
     container.appendChild(item);
   });
 }
