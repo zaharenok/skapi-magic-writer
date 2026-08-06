@@ -200,7 +200,11 @@ function injectStyles() {
     /* Wide schedule modal: two columns so it grows horizontally, not vertically */
     .skmw-modal-wide{max-width:780px;}
     .skmw-sched-cols{display:flex;gap:22px;align-items:flex-start;}
-    .skmw-sched-left{flex:1.15;min-width:0;}
+    .skmw-sched-left{flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;}
+    .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
+    .skmw-sched-left>label>span{margin-left:4px;font-weight:400;color:#9ca3af;text-transform:none;}
+    .skmw-sched-left>textarea,.skmw-sched-left>.skmw-preview{width:100%;min-height:80px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
+    .skmw-preview-empty{color:#9ca3af;font-style:italic;display:flex;align-items:center;justify-content:center;height:100%;min-height:60px;}
     .skmw-sched-right{flex:1;min-width:0;border-left:1.5px solid #f3f4f6;padding-left:20px;}
     .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
     .skmw-sched-right h4:not(:first-child){margin-top:16px;}
@@ -414,7 +418,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // Default: tomorrow 09:00 for new posts (a sensible posting slot)
   let chosen = post ? new Date(post.scheduled_for) : atDayOffset(1, 9, 0);
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
-  let gifOn = !!(isEdit ? post.gif_search : false);
+
 
   const previewHtml = content
     ? escapeHtml(content.slice(0, 280)) + (content.length > 280 ? '…' : '')
@@ -446,7 +450,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <div id="skmw-s-custom" style="display:none;margin-top:6px;">
           <select id="skmw-s-hour"></select> : <select id="skmw-s-min"></select>
         </div>
-        <label class="skmw-gif"><input type="checkbox" id="skmw-s-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
@@ -532,12 +535,11 @@ async function openScheduleDialog(post = null, prefillText = null) {
     const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
     if (!finalContent) return showErr('Post content is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
-    gifOn = document.getElementById('skmw-s-gif').checked;
     const btn = document.getElementById('skmw-s-save');
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifOn ? gifTermFrom(finalContent) : null };
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: null };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
       close();
@@ -726,7 +728,7 @@ function renderEditForm(post, container) {
     <div id="skmw-e-custom" style="display:none;margin-top:6px;">
       <select id="skmw-e-hour"></select> : <select id="skmw-e-min"></select>
     </div>
-    <label class="skmw-gif"><input type="checkbox" id="skmw-e-gif" ${gifOn ? 'checked' : ''}>🎬 Attach a relevant GIF</label>
+    </div>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -786,12 +788,11 @@ function renderEditForm(post, container) {
     const finalContent = document.getElementById('skmw-e-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
-    const gifOn = document.getElementById('skmw-e-gif').checked;
     const btn = document.getElementById('skmw-e-save');
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: gifOn ? gifTermFrom(finalContent) : null };
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: null };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
