@@ -181,7 +181,7 @@ function injectStyles() {
     .skmw-up-item:hover{background:#f9fafb;}
     .skmw-up-item .t{font-weight:700;color:#374151;min-width:96px;}
     .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-    .skmw-gif{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;}
+    .skmw-gif{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
     .skmw-gif input{width:16px;height:16px;}
     /* Wide schedule modal: two columns so it grows horizontally, not vertically */
     .skmw-modal-wide{max-width:780px;}
@@ -263,10 +263,7 @@ async function openMagicDialog() {
     <p class="sub">Paste raw thoughts — AI turns them into a post ready to drop into Skool.</p>
     <label>Your thoughts</label>
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
-    <div class="skmw-row" style="margin-top:10px;">
-      <input type="checkbox" id="skmw-title" checked style="width:16px;height:16px;">
-      <label for="skmw-title" style="margin:0;text-transform:none;letter-spacing:0;font-weight:600;">Generate a catchy title (first line)</label>
-    </div>
+    <label class="skmw-gif" style="margin-top:10px;"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
     <label class="skmw-gif" style="margin-top:8px;"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
