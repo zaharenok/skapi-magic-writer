@@ -260,6 +260,10 @@ function injectButtons() {
     const magic = el(`<button class="skmw-btn skmw-magic">✨ Magic Post</button>`);
     magic.addEventListener('click', (e) => { e.stopPropagation(); openMagicDialog(); });
     anchor.parentNode.insertBefore(magic, anchor.nextSibling);
+    
+    const scheduled = el(`<button class="skmw-btn skmw-scheduled" style="margin-left:8px;">📅 Scheduled</button>`);
+    scheduled.addEventListener('click', (e) => { e.stopPropagation(); toggleCalendar(); });
+    anchor.parentNode.insertBefore(scheduled, magic.nextSibling);
   }
 }
 // Schedule lives inside the OPEN composer, next to Cancel/Post.
