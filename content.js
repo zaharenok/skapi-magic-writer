@@ -121,9 +121,9 @@ function injectStyles() {
     .skmw-cal .b{position:absolute;top:-4px;right:-4px;background:${BRAND};color:${INK};font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;border-radius:8px;border:1.5px solid ${INK};display:flex;align-items:center;justify-content:center;}
     .skmw-cal .b.zero{display:none;}
     .skmw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;}
-    .skmw-modal{background:#fff;border:2px solid ${INK};border-radius:16px;box-shadow:6px 6px 0 rgba(0,0,0,.15);width:100%;max-width:560px;padding:22px;font-family:ui-sans-serif,system-ui,sans-serif;}
-    .skmw-modal h2{margin:0 0 4px;font-size:20px;}
-    .skmw-modal .sub{color:#6b7280;font-size:13px;margin:0 0 16px;}
+    .skmw-modal{background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:16px;box-shadow:6px 6px 0 rgba(0,0,0,.15);width:100%;max-width:560px;padding:22px;font-family:ui-sans-serif,system-ui,sans-serif;}
+    .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;}
+    .skmw-modal .sub{color:#374151;font-size:13px;margin:0 0 16px;}
     .skmw-modal label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
     .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
     .skmw-modal textarea{min-height:120px;resize:vertical;}
