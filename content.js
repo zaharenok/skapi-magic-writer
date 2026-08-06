@@ -107,6 +107,12 @@ async function typeInto(editor, text) {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function toast(msg) {
+  const t = el(`<div class="skmw-toast">${escapeHtml(msg)}</div>`);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
 // ---------------------------------------------------------------------------
 // STYLES
 // ---------------------------------------------------------------------------
