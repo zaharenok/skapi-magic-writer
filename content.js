@@ -173,11 +173,31 @@ function injectButtons() {
     magic.addEventListener('click', (e) => { e.stopPropagation(); openMagicDialog(); });
     anchor.parentNode.insertBefore(magic, anchor.nextSibling);
   }
-  if (!document.querySelector('.skmw-schedule') && !anchor.parentNode.querySelector('.skmw-schedule')) {
-    const sched = el(`<button class="skmw-btn skmw-schedule">📅 Schedule</button>`);
-    sched.addEventListener('click', (e) => { e.stopPropagation(); openScheduleDialog(); });
-    anchor.parentNode.insertBefore(sched, (anchor.parentNode.querySelector('.skmw-magic') || anchor).nextSibling);
-  }
+}
+// Schedule lives inside the OPEN composer, next to Cancel/Post.
+// The user writes the post, then decides: Post now or Schedule.
+function injectScheduleInComposer() {
+  // Find the Post button of an open composer (Cancel is always next to it)
+  const postBtn = [...document.querySelectorAll('button')].find(
+    (b) => b.textContent.trim().toLowerCase() === 'post' && b.offsetParent !== null
+  );
+  if (!postBtn) return;
+  const row = postBtn.parentNode;
+  if (row.querySelector('.skmw-schedule-compose')) return; // already injected
+
+  const btn = el(`<button class="skmw-btn skmw-schedule-compose">📅 Schedule</button>`);
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    // Prefill the schedule dialog from whatever the user just wrote
+    const editor = findEditor();
+    const titleInput = findTitleInput();
+    const body = editor ? editor.textContent.trim() : '';
+    const title = titleInput ? titleInput.value.trim() : '';
+    const fullText = (title ? title + '\n\n' : '') + body;
+    openScheduleDialog(null, fullText);
+  });
+  // Insert right before Post: Cancel | 📅 Schedule | Post
+  row.insertBefore(btn, postBtn);
 }
 function injectCalendarIcon() {
   const header = findHeader();
@@ -288,7 +308,7 @@ async function insertIntoComposer(text) {
 // ---------------------------------------------------------------------------
 // SCHEDULE DIALOG
 // ---------------------------------------------------------------------------
-async function openScheduleDialog(post = null) {
+async function openScheduleDialog(post = null, prefillText = null) {
   if (dialogOpen) return;
   dialogOpen = true;
   const slug = await getSlug();
@@ -296,9 +316,10 @@ async function openScheduleDialog(post = null) {
   const def = post ? new Date(post.scheduled_for) : (() => { const d = new Date(Date.now() + 2 * 3600 * 1000); d.setMinutes(0, 0, 0); return d; })();
   const defVal = `${def.getFullYear()}-${String(def.getMonth() + 1).padStart(2, '0')}-${String(def.getDate()).padStart(2, '0')}T${String(def.getHours()).padStart(2, '0')}:${String(def.getMinutes()).padStart(2, '0')}`;
 
-  // Pre-fill from the open composer if scheduling a brand-new post
-  let prefill = '';
-  if (!isEdit) {
+  // Pre-fill: explicit text wins (from the Schedule button in the composer),
+  // otherwise fall back to whatever is in the open composer.
+  let prefill = prefillText || '';
+  if (!isEdit && !prefill) {
     const editor = findEditor();
     if (editor) prefill = (editor.textContent || '').trim();
   }
@@ -439,6 +460,7 @@ function renderList() {
       <div class="c">${(p.content || '').slice(0, 160) || '(empty)'}</div>
     </div>`;
   }).join('');
+
   list.querySelectorAll('.skmw-item').forEach((node) => {
     node.addEventListener('click', () => {
       const post = calState.posts.find((p) => String(p.id) === node.dataset.id);
@@ -454,13 +476,13 @@ function renderList() {
 // INIT + OBSERVER
 // ---------------------------------------------------------------------------
 function observe() {
-  const obs = new MutationObserver(() => { injectButtons(); injectCalendarIcon(); });
+  const obs = new MutationObserver(() => { injectButtons(); injectScheduleInComposer(); injectCalendarIcon(); });
   obs.observe(document.body, { childList: true, subtree: true });
 }
 async function init() {
   injectStyles();
   observe();
-  setTimeout(() => { injectButtons(); injectCalendarIcon(); }, 1500);
+  setTimeout(() => { injectButtons(); injectScheduleInComposer(); injectCalendarIcon(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
   console.log('✨ [SKapi Magic Writer] loaded');
