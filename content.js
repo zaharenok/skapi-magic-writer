@@ -487,6 +487,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
       <button class="skmw-btn skmw-btn-pink" id="skmw-s-save">${isEdit ? 'Update' : '📅 Schedule'}</button>
     </div>
     <div class="skmw-err" id="skmw-s-err"></div>
+  `);
   let postCreated = false;
   const close = (success = false) => {
     overlay.remove();
@@ -523,9 +524,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
   document.getElementById('skmw-s-cancel').addEventListener('click', () => close(false));
   if (isEdit) setTimeout(() => document.getElementById('skmw-s-content')?.focus(), 60);
 
-  const close = () => { overlay.remove(); dialogOpen = false; };
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-  document.getElementById('skmw-s-cancel').addEventListener('click', close);
 
   const $dt = document.getElementById('skmw-s-dt');
   const $past = document.getElementById('skmw-s-past');
