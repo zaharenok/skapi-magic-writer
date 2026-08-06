@@ -328,7 +328,7 @@ async function openMagicDialog() {
       <div class="skmw-progress">
         <div class="skmw-progress-bar"></div>
       </div>
-      <p class="skmw-loading-text">✨ Generating your post... opening Skool composer...</p>
+      <p class="skmw-loading-text">✨ Generating your post...</p>
     </div>
   </div>`);
   overlay.appendChild(modal);
