@@ -183,6 +183,18 @@ function injectStyles() {
     .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
     .skmw-gif{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;}
     .skmw-gif input{width:16px;height:16px;}
+    /* Wide schedule modal: two columns so it grows horizontally, not vertically */
+    .skmw-modal-wide{max-width:780px;}
+    .skmw-sched-cols{display:flex;gap:22px;align-items:flex-start;}
+    .skmw-sched-left{flex:1.15;min-width:0;}
+    .skmw-sched-right{flex:1;min-width:0;border-left:1.5px solid #f3f4f6;padding-left:20px;}
+    .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
+    .skmw-sched-right h4:not(:first-child){margin-top:16px;}
+    .skmw-dt{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
+    .skmw-dt:focus{outline:none;border-color:${BRAND};}
+    .skmw-timeslot{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;margin-top:6px;}
+    .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
+    @media (max-width:680px){.skmw-sched-cols{flex-direction:column;}.skmw-sched-right{border-left:none;border-top:1.5px solid #f3f4f6;padding-left:0;padding-top:16px;}}
   `;
   const style = el(`<style id="skmw-styles">${css}</style>`);
   document.head.appendChild(style);
@@ -199,13 +211,20 @@ function injectButtons() {
 // Schedule lives inside the OPEN composer, next to Cancel/Post.
 // The user writes the post, then decides: Post now or Schedule.
 function injectScheduleInComposer() {
-  // Find the Post button of an open composer (Cancel is always next to it)
+  // Post and Cancel buttons
   const postBtn = [...document.querySelectorAll('button')].find(
     (b) => b.textContent.trim().toLowerCase() === 'post' && b.offsetParent !== null
   );
-  if (!postBtn) return;
-  const row = postBtn.parentNode;
-  if (row.querySelector('.skmw-schedule-compose')) return; // already injected
+  const cancelBtn = [...document.querySelectorAll('button')].find(
+    (b) => b.textContent.trim().toLowerCase() === 'cancel' && b.offsetParent !== null
+  );
+  if (!postBtn || !cancelBtn) return;
+
+  // The action row is the shared container holding Cancel and the Post
+  // wrapper (fqifkx). We must NOT drop inside the Post wrapper — Schedule
+  // becomes a sibling of Cancel, at the same level as the Post wrapper.
+  const actionRow = cancelBtn.parentNode;
+  if (!actionRow || actionRow.querySelector('.skmw-schedule-compose')) return;
 
   const btn = el(`<button class="skmw-s-inline skmw-schedule-compose" type="button">📅 Schedule</button>`);
   btn.addEventListener('click', (e) => {
@@ -218,8 +237,8 @@ function injectScheduleInComposer() {
     const fullText = (title ? title + '\n\n' : '') + body;
     openScheduleDialog(null, fullText);
   });
-  // Insert right before Post: Cancel | 📅 Schedule | Post
-  row.insertBefore(btn, postBtn);
+  // Insert right after Cancel: [Cancel] [📅 Schedule] [Post wrapper]
+  actionRow.insertBefore(btn, cancelBtn.nextSibling);
 }
 function injectCalendarIcon() {
   const header = findHeader();
