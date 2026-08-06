@@ -174,6 +174,11 @@ function injectStyles() {
     .skmw-btn-pink{background:${BRAND};color:${INK};}
     .skmw-btn-pink:disabled{opacity:.5;cursor:wait;}
     .skmw-err{background:#FEF2F2;border:2px solid #FCA5A5;color:#991B1B;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none;}
+    .skmw-loading{margin-top:16px;text-align:center;}
+    .skmw-progress{width:100%;height:8px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:10px;}
+    .skmw-progress-bar{height:100%;background:linear-gradient(90deg, ${BRAND}, ${INK});background-size:200% 100%;animation:skmw-progress-anim 1.5s ease-in-out infinite;}
+    @keyframes skmw-progress-anim{0%{background-position:100% 0;}100%{background-position:0 0;}}
+    .skmw-loading-text{font-size:13px;color:#6b7280;margin:0;font-weight:500;}
     .skmw-res{display:none;margin-top:14px;}
     .skmw-pop{position:fixed;top:62px;right:16px;width:340px;max-height:70vh;overflow:auto;background:#fff;border:2px solid ${INK};border-radius:14px;box-shadow:6px 6px 0 rgba(0,0,0,.12);z-index:2147482999;font-family:ui-sans-serif,system-ui,sans-serif;}
     .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;}
@@ -316,16 +321,14 @@ async function openMagicDialog() {
     <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
-      <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate</button>
+      <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate & Insert</button>
     </div>
     <div class="skmw-err" id="skmw-err"></div>
-    <div class="skmw-res" id="skmw-res">
-      <label>Generated post</label>
-      <textarea id="skmw-out" style="min-height:160px;"></textarea>
-      <div class="skmw-actions">
-        <button class="skmw-btn skmw-btn-ghost" id="skmw-regen">🔄 Regenerate</button>
-        <button class="skmw-btn skmw-btn-pink" id="skmw-insert">📋 Insert into composer</button>
+    <div class="skmw-loading" id="skmw-loading" style="display:none;">
+      <div class="skmw-progress">
+        <div class="skmw-progress-bar"></div>
       </div>
+      <p class="skmw-loading-text">✨ Generating your post... opening Skool composer...</p>
     </div>
   </div>`);
   overlay.appendChild(modal);
@@ -344,28 +347,24 @@ async function openMagicDialog() {
       ? `Write a community post with a catchy short title (2-6 words) at the top, then the post content. Plain text only, no markdown. Here are the thoughts:\n\n${input}`
       : `Write a community post. Plain text only, no markdown. Here are the thoughts:\n\n${input}`;
     const goBtn = document.getElementById('skmw-go');
-    goBtn.disabled = true; goBtn.textContent = '⏳ Generating...';
+    const loading = document.getElementById('skmw-loading');
+    goBtn.disabled = true;
+    loading.style.display = 'block';
     hideErr();
     try {
       const data = await apiRequest('/ai/generate', { method: 'POST', body: { prompt }, auth: false });
       if (!data.success || !data.text) throw new Error(data.error || 'No text returned');
-      document.getElementById('skmw-out').value = data.text;
-      document.getElementById('skmw-res').style.display = 'block';
+      const attachGif = document.getElementById('skmw-magic-gif').checked;
+   close();
+      await insertIntoComposer(data.text, attachGif);
+      toast(attachGif ? '✅ Post generated and inserted (+ GIF)' : '✅ Post generated and inserted');
     } catch (e) {
       showErr(e.message);
-    } finally {
-      goBtn.disabled = false; goBtn.textContent = '✨ Generate';
+      goBtn.disabled = false;
+      loading.style.display = 'none';
     }
   };
   document.getElementById('skmw-go').addEventListener('click', run);
-  document.getElementById('skmw-insert').addEventListener('click', async () => {
-    const text = document.getElementById('skmw-out').value.trim();
-    if (!text) return;
-    const attachGif = document.getElementById('skmw-magic-gif').checked;
-    close();
-    await insertIntoComposer(text, attachGif);
-    toast(attachGif ? '✅ Inserted (+ GIF) into the Skool composer' : '✅ Inserted into the Skool composer');
-  });
 
   function showErr(m) { const e = document.getElementById('skmw-err'); e.textContent = m; e.style.display = 'block'; }
   function hideErr() { document.getElementById('skmw-err').style.display = 'none'; }
@@ -464,7 +463,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
         <div class="skmw-cal-grid" id="skmw-s-cal"></div>
-      </div>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
