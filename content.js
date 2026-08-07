@@ -25,15 +25,26 @@ async function closeComposer() {
       || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
     if (cancelBtn) {
       cancelBtn.click();
-      // A custom confirmation modal mounts after a tick — accept it
-      await new Promise((r) => setTimeout(r, 500));
-      const leaveBtn = [...document.querySelectorAll('button')].find((b) => {
-        const t = b.textContent.trim().toLowerCase();
-        return ['leave', 'yes', 'exit', 'discard', 'leave anyway', 'leave post'].includes(t)
-          || (t.includes('leave') && t.length < 25);
-      });
-      if (leaveBtn) leaveBtn.click();
-      console.log('[skmw] Closed composer via Cancel button');
+      // Skool's custom confirmation modal mounts async. Poll for its accept
+      // button (button, [role=button], [data-testid]) for up to ~3s.
+      const AFFIRM = ['leave', 'yes', 'discard', 'exit', 'quit', 'confirm', 'abandon', 'delete'];
+      const DENY = ['stay', 'no', 'keep', 'cancel', 'continue', 'back', 'finish later', 'keep editing', 'go back', 'never mind', 'dont leave', "don't leave"];
+      const findAccept = () => {
+        const candidates = [...document.querySelectorAll('button, [role="button"], [data-testid]')];
+        return candidates.find((b) => {
+          const t = (b.textContent || '').trim().toLowerCase();
+          if (!t || t.length > 40) return false;
+          if (DENY.some((d) => t === d || t.includes(d))) return false;
+          return AFFIRM.some((a) => t === a || t.includes(a));
+        });
+      };
+      let accepted = null;
+      for (let i = 0; i < 12; i++) {
+        const btn = findAccept();
+        if (btn) { btn.click(); accepted = btn.textContent.trim(); break; }
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      console.log('[skmw] Closed composer via Cancel button' + (accepted ? ` (accepted: ${accepted})` : ''));
       return true;
     }
   } finally {
@@ -65,13 +76,17 @@ function getJwt() {
   });
 }
 function getSlug() {
-  return new Promise((resolve) =>
-    chrome.storage.local.get(['communitySlug'], (r) => {
-      const stored = r.communitySlug;
-      const fromUrl = (location.pathname.split('/').filter(Boolean)[0]) || '';
-      resolve(stored || fromUrl);
-    })
-  );
+  return new Promise((resolve) => {
+    const fromUrl = (location.pathname.split('/').filter(Boolean)[0]) || '';
+    try {
+      chrome.storage.local.get(['communitySlug'], (r) => {
+        resolve((r && r.communitySlug) || fromUrl);
+      });
+    } catch (e) {
+      console.warn('[skmw] storage unavailable:', e && e.message);
+      resolve(fromUrl);
+    }
+  });
 }
 
 async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
