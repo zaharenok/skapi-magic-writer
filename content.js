@@ -488,6 +488,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
     </div>
     <div class="skmw-err" id="skmw-s-err"></div>
   `);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
   let postCreated = false;
   const close = (success = false) => {
     overlay.remove();
@@ -641,7 +643,7 @@ function renderUpcoming(container, closeDialog) {
   pending.slice(0, 6).forEach((p) => {
     const d = new Date(p.scheduled_for);
     const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
-    item.addEventListener('click', () => { closeDialog(false); setTimeout(() => openScheduleDialog(p), 50); });
+    item.addEventListener('click', () => { closeDialog(true); setTimeout(() => openScheduleDialog(p), 50); });
     container.appendChild(item);
   });
 }
