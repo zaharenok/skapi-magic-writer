@@ -10,19 +10,34 @@ const API_BASE = 'https://api.skapi.pro';
 const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
 // ---------------------------------------------------------------------------
-function closeComposer() {
-  // Find and click the Cancel button in the Skool composer.
-  // NOTE: `:contains()` is jQuery-only and throws in querySelector — we must
-  // search by textContent with Array.find (same pattern as injectScheduleInComposer).
-  const visibleButtons = [...document.querySelectorAll('button')].filter(
-    (b) => b.offsetParent !== null
-  );
-  const cancelBtn = visibleButtons.find((b) => b.textContent.trim().toLowerCase() === 'cancel')
-    || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
-  if (cancelBtn) {
-    cancelBtn.click();
-    console.log('[skmw] Closed composer via Cancel button');
-    return true;
+async function closeComposer() {
+  // Skool shows "You haven't finished your post yet. Do you want to leave
+  // without finishing?" when closing a composer that still has content.
+  // Bypass it two ways: intercept native window.confirm, and if Skool renders
+  // a custom confirmation modal instead, click its Leave/Yes button.
+  const originalConfirm = window.confirm;
+  window.confirm = () => true;
+  try {
+    const visibleButtons = [...document.querySelectorAll('button')].filter(
+      (b) => b.offsetParent !== null
+    );
+    const cancelBtn = visibleButtons.find((b) => b.textContent.trim().toLowerCase() === 'cancel')
+      || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
+    if (cancelBtn) {
+      cancelBtn.click();
+      // A custom confirmation modal mounts after a tick — accept it
+      await new Promise((r) => setTimeout(r, 500));
+      const leaveBtn = [...document.querySelectorAll('button')].find((b) => {
+        const t = b.textContent.trim().toLowerCase();
+        return ['leave', 'yes', 'exit', 'discard', 'leave anyway', 'leave post'].includes(t)
+          || (t.includes('leave') && t.length < 25);
+      });
+      if (leaveBtn) leaveBtn.click();
+      console.log('[skmw] Closed composer via Cancel button');
+      return true;
+    }
+  } finally {
+    window.confirm = originalConfirm;
   }
   // Fallback: send Escape key
   document.activeElement?.blur();
