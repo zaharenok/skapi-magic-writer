@@ -11,21 +11,18 @@ const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
 // ---------------------------------------------------------------------------
 function closeComposer() {
-  // Find and click the Cancel button in the Skool composer
-  const selectors = [
-    'button[class*="cancel"]',
-    'button:contains("Cancel")',
-    'div:contains("Cancel")',
-    'button:contains("Go Live")', // Skool sometimes uses "Go Live" for cancel action
-    '[data-testid="cancel-button"]',
-  ];
-  for (const sel of selectors) {
-    const btn = document.querySelector(sel);
-    if (btn) {
-      btn.click();
-      console.log('[skmw] Closed composer via:', sel);
-      return true;
-    }
+  // Find and click the Cancel button in the Skool composer.
+  // NOTE: `:contains()` is jQuery-only and throws in querySelector — we must
+  // search by textContent with Array.find (same pattern as injectScheduleInComposer).
+  const visibleButtons = [...document.querySelectorAll('button')].filter(
+    (b) => b.offsetParent !== null
+  );
+  const cancelBtn = visibleButtons.find((b) => b.textContent.trim().toLowerCase() === 'cancel')
+    || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
+  if (cancelBtn) {
+    cancelBtn.click();
+    console.log('[skmw] Closed composer via Cancel button');
+    return true;
   }
   // Fallback: send Escape key
   document.activeElement?.blur();
