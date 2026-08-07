@@ -10,14 +10,36 @@ const API_BASE = 'https://api.skapi.pro';
 const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
 // ---------------------------------------------------------------------------
+function clearComposer() {
+  // Empty the composer so Skool doesn't show "You haven't finished your
+  // post yet" when it closes. Clearing the title via the native setter and
+  // the editor via selectAll+delete goes through React/ProseMirror events.
+  const titleInput = findTitleInput();
+  if (titleInput) setInput(titleInput, '');
+  const editor = findEditor();
+  if (editor) {
+    try {
+      editor.focus();
+      document.execCommand('selectAll');
+      document.execCommand('delete');
+    } catch (e) { /* ignore */ }
+    if (editor.textContent) editor.textContent = '';
+  }
+}
+
 async function closeComposer() {
   // Skool shows "You haven't finished your post yet. Do you want to leave
   // without finishing?" when closing a composer that still has content.
-  // Bypass it two ways: intercept native window.confirm, and if Skool renders
-  // a custom confirmation modal instead, click its Leave/Yes button.
+  // Bypass it: clear the composer first (no content -> no prompt), intercept
+  // native window.confirm, and if a custom confirmation modal still appears,
+  // click its accept button.
   const originalConfirm = window.confirm;
   window.confirm = () => true;
   try {
+    clearComposer();
+    // Give React/ProseMirror a moment to process the cleared content
+    await new Promise((r) => setTimeout(r, 200));
+
     const visibleButtons = [...document.querySelectorAll('button')].filter(
       (b) => b.offsetParent !== null
     );
@@ -26,11 +48,19 @@ async function closeComposer() {
     if (cancelBtn) {
       cancelBtn.click();
       // Skool's custom confirmation modal mounts async. Poll for its accept
-      // button (button, [role=button], [data-testid]) for up to ~3s.
-      const AFFIRM = ['leave', 'yes', 'discard', 'exit', 'quit', 'confirm', 'abandon', 'delete'];
-      const DENY = ['stay', 'no', 'keep', 'cancel', 'continue', 'back', 'finish later', 'keep editing', 'go back', 'never mind', 'dont leave', "don't leave"];
+      // button for up to ~3s, scoped to the modal container (the deepest
+      // element that contains the "leave without finishing" message).
+      const AFFIRM = ['leave', 'yes', 'discard', 'exit', 'quit', 'confirm', 'abandon', 'delete', 'leave anyway', 'leave post', 'continue without saving'];
+      const DENY = ['stay', 'no', 'keep', 'cancel', 'continue', 'back', 'finish later', 'keep editing', 'go back', 'never mind', 'dont leave', "don't leave", 'resume'];
+      const modalRoot = () => [...document.querySelectorAll('div, section, [role="dialog"]')].reverse().find(
+        (el) => {
+          const t = (el.textContent || '').toLowerCase();
+          return t.includes('leave without finishing') || t.includes("haven't finished");
+        }
+      );
       const findAccept = () => {
-        const candidates = [...document.querySelectorAll('button, [role="button"], [data-testid]')];
+        const scope = modalRoot() || document;
+        const candidates = [...scope.querySelectorAll('button, [role="button"], [data-testid], [class*="button"], [class*="Button"], a[href="#"]')];
         return candidates.find((b) => {
           const t = (b.textContent || '').trim().toLowerCase();
           if (!t || t.length > 40) return false;
@@ -45,6 +75,13 @@ async function closeComposer() {
         await new Promise((r) => setTimeout(r, 250));
       }
       console.log('[skmw] Closed composer via Cancel button' + (accepted ? ` (accepted: ${accepted})` : ''));
+      if (!accepted && modalRoot()) {
+        // Diagnostics: dump the buttons visible inside the stuck modal
+        const texts = [...modalRoot().querySelectorAll('button, [role="button"], [class*="button"]')]
+          .map((b) => JSON.stringify((b.textContent || '').trim().slice(0, 30)))
+          .filter(Boolean);
+        console.warn('[skmw] Confirmation modal still open, buttons found:', texts);
+      }
       return true;
     }
   } finally {
