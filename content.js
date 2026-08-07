@@ -642,6 +642,10 @@ async function openScheduleDialog(post = null, prefillText = null) {
   if (!isEdit) renderUpcoming(document.getElementById('skmw-s-up'), close);
 
   document.getElementById('skmw-s-save').addEventListener('click', async () => {
+    // Read the field directly — a change event may not have fired yet if the
+    // user edits the time and clicks Save immediately.
+    const v = new Date($dt.value);
+    if (!isNaN(v.getTime())) chosen = v;
     const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
     if (!finalContent) return showErr('Post content is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
@@ -866,6 +870,10 @@ function renderEditForm(post, container) {
   const hideErr = () => { document.getElementById('skmw-e-err').style.display = 'none'; };
 
   document.getElementById('skmw-e-save').addEventListener('click', async () => {
+    // Read the field directly — a change event may not have fired yet if the
+    // user edits the time and clicks Update immediately.
+    const v = new Date($dt.value);
+    if (!isNaN(v.getTime())) chosen = v;
     const finalContent = document.getElementById('skmw-e-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
