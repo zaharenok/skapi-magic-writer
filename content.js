@@ -72,6 +72,7 @@ async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
   const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === false) {
+    if (data.subscribe_url) window.__skmwSubUrl = data.subscribe_url;
     throw new Error(data.detail || data.error || `API ${res.status}`);
   }
   return data;
@@ -376,7 +377,16 @@ async function openMagicDialog() {
   };
   document.getElementById('skmw-go').addEventListener('click', run);
 
-  function showErr(m) { const e = document.getElementById('skmw-err'); e.textContent = m; e.style.display = 'block'; }
+  function showErr(m) {
+    const e = document.getElementById('skmw-err');
+    if (String(m).includes('subscription_required')) {
+      const url = window.__skmwSubUrl || 'https://www.skool.com';
+      e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+    } else {
+      e.textContent = m;
+    }
+    e.style.display = 'block';
+  }
   function hideErr() { document.getElementById('skmw-err').style.display = 'none'; }
 }
 
