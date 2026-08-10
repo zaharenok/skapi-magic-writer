@@ -28,11 +28,9 @@ function clearComposer() {
 }
 
 async function closeComposer() {
-  // Skool shows "You haven't finished your post yet. Do you want to leave
-  // without finishing?" when closing a composer that still has content.
-  // Bypass it: clear the composer first (no content -> no prompt), intercept
-  // native window.confirm, and if a custom confirmation modal still appears,
-  // click its accept button.
+  // Skool shows a confirmation modal when closing a composer. We clear the
+  // composer first, intercept window.confirm, and auto-click the modal's
+  // accept button if Skool shows a custom confirmation dialog.
   const originalConfirm = window.confirm;
   window.confirm = () => true;
   try {
@@ -47,40 +45,102 @@ async function closeComposer() {
       || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
     if (cancelBtn) {
       cancelBtn.click();
-      // Skool's custom confirmation modal mounts async. Poll for its accept
-      // button for up to ~3s, scoped to the modal container (the deepest
-      // element that contains the "leave without finishing" message).
-      const AFFIRM = ['leave', 'yes', 'discard', 'exit', 'quit', 'confirm', 'abandon', 'delete', 'leave anyway', 'leave post', 'continue without saving'];
-      const DENY = ['stay', 'no', 'keep', 'cancel', 'continue', 'back', 'finish later', 'keep editing', 'go back', 'never mind', 'dont leave', "don't leave", 'resume'];
-      const modalRoot = () => [...document.querySelectorAll('div, section, [role="dialog"]')].reverse().find(
-        (el) => {
-          const t = (el.textContent || '').toLowerCase();
-          return t.includes('leave without finishing') || t.includes("haven't finished");
+
+      // Find Skool's confirmation modal. Look for role="dialog"/"alertdialog",
+      // classes like modal/dialog/confirm (case-insensitive), or fixed-position
+      // overlays containing cancel/discard/leave/publish/finish text.
+      const findModal = () => {
+        const candidates = [
+          ...document.querySelectorAll('[role="dialog"]'),
+          ...document.querySelectorAll('[role="alertdialog"]'),
+          ...document.querySelectorAll('[class*="modal" i]'),
+          ...document.querySelectorAll('[class*="dialog" i]'),
+          ...document.querySelectorAll('[class*="confirm" i]'),
+        ];
+        // Also check for fixed-position overlays that look like modals.
+        // Require an inner button — a plain dropdown menu ("Cancel" item)
+        // has no buttons inside, so it won't be mistaken for a dialog.
+        const allDivs = [...document.querySelectorAll('div')];
+        for (const div of allDivs) {
+          const style = window.getComputedStyle(div);
+          if (style.position === 'fixed' && style.zIndex && parseInt(style.zIndex) > 100) {
+            if (!div.querySelector('button, [role="button"]')) continue;
+            const text = (div.textContent || '').toLowerCase();
+            if (/cancel|discard|leave|unsaved|publish|finish/.test(text)) {
+              candidates.push(div);
+            }
+          }
         }
-      );
-      const findAccept = () => {
-        const scope = modalRoot() || document;
-        const candidates = [...scope.querySelectorAll('button, [role="button"], [data-testid], [class*="button"], [class*="Button"], a[href="#"]')];
-        return candidates.find((b) => {
-          const t = (b.textContent || '').trim().toLowerCase();
-          if (!t || t.length > 40) return false;
-          if (DENY.some((d) => t === d || t.includes(d))) return false;
-          return AFFIRM.some((a) => t === a || t.includes(a));
-        });
+        // Sort deepest/most specific first; return the full list so the
+        // accept-button search can fall through candidates (the deepest
+        // container might hold only text, not the buttons).
+        if (candidates.length === 0) return [];
+        candidates.sort((a, b) => (b.querySelectorAll('*').length - a.querySelectorAll('*').length));
+        return candidates;
       };
+
+      // Classify buttons INSIDE the modal only. Two modal styles exist:
+      //  (1) "Leave without finishing?"  -> buttons [Cancel, Leave] where
+      //      Leave is the accept (Cancel = stay).
+      //  (2) "Cancel this post?" / "Discard post?" -> buttons [Keep editing,
+      //      Cancel] where Cancel IS the accept.
+      // Strategy: prefer explicit accept words (leave, discard, delete, exit)
+      // first; only fall back to 'cancel' as accept when no explicit accept
+      // button exists. 'keep editing', 'stay', 'go back' are always deny.
+      const MODAL_EXPLICIT_ACCEPT = /leave|discard|yes|confirm|delete|exit|quit|abandon|continue without saving/i;
+      const MODAL_FALLBACK_ACCEPT = /cancel|discard/i;
+      const MODAL_DENY_PATTERNS = /stay|keep editing|keep|go back|never mind|resume|back to|continue editing|dont leave|don't leave|dont cancel|don't cancel/i;
+
+      const isDeny = (text) => MODAL_DENY_PATTERNS.test(text);
+
+      const findAcceptButton = (modals) => {
+        for (const modal of modals) {
+          const buttons = [...modal.querySelectorAll('button, [role="button"]')];
+          // Pass 1: explicit accept words only
+          const explicit = buttons.find((b) => {
+            const text = (b.textContent || '').trim().toLowerCase();
+            if (!text || text.length > 40 || isDeny(text)) return false;
+            return MODAL_EXPLICIT_ACCEPT.test(text);
+          });
+          if (explicit) return explicit;
+          // Pass 2: 'cancel'/'discard' as accept (modal style 2)
+          const fallback = buttons.find((b) => {
+            const text = (b.textContent || '').trim().toLowerCase();
+            if (!text || text.length > 40 || isDeny(text)) return false;
+            return MODAL_FALLBACK_ACCEPT.test(text);
+          });
+          if (fallback) return fallback;
+        }
+        return null;
+      };
+
+      // Poll for modal for up to ~4s (16 iterations × 250ms). Skool mounts
+      // the modal async, so we retry before falling back.
       let accepted = null;
-      for (let i = 0; i < 12; i++) {
-        const btn = findAccept();
-        if (btn) { btn.click(); accepted = btn.textContent.trim(); break; }
+      let foundModal = null;
+      for (let i = 0; i < 16; i++) {
+        foundModal = findModal();
+        if (foundModal.length) {
+          const btn = findAcceptButton(foundModal);
+          if (btn) {
+            btn.click();
+            accepted = btn.textContent.trim();
+            break;
+          }
+        }
         await new Promise((r) => setTimeout(r, 250));
       }
-      console.log('[skmw] Closed composer via Cancel button' + (accepted ? ` (accepted: ${accepted})` : ''));
-      if (!accepted && modalRoot()) {
-        // Diagnostics: dump the buttons visible inside the stuck modal
-        const texts = [...modalRoot().querySelectorAll('button, [role="button"], [class*="button"]')]
+
+      if (accepted) {
+        console.log('[skmw] Auto-accepted Skool confirmation modal:', accepted);
+      } else if (foundModal && foundModal.length) {
+        // Modal found but no accept button — log diagnostics
+        const texts = [...foundModal[0].querySelectorAll('button, [role="button"]')]
           .map((b) => JSON.stringify((b.textContent || '').trim().slice(0, 30)))
           .filter(Boolean);
-        console.warn('[skmw] Confirmation modal still open, buttons found:', texts);
+        console.warn('[skmw] Confirmation modal found but no accept button. Buttons:', texts);
+      } else {
+        console.log('[skmw] No confirmation modal detected — composer closed cleanly');
       }
       return true;
     }
@@ -91,7 +151,7 @@ async function closeComposer() {
   document.activeElement?.blur();
   const escEvent = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });
   document.dispatchEvent(escEvent);
-  console.log('[skmw] Sent Escape key to close composer');
+  console.log('[skmw] Sent Escape key to close composer (fallback)');
   return true;
 }
 // ---------------------------------------------------------------------------
