@@ -157,19 +157,37 @@ async function closeComposer() {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Set once when the extension context dies (reload/update while tabs are
+// open). Every chrome.* call then throws "Extension context invalidated"
+// synchronously — we must stop retrying and warn the user exactly once.
+let _contextLost = false;
+function handleContextLost() {
+  if (_contextLost) return true;
+  _contextLost = true;
+  console.error('[skmw] Extension context invalidated — reload Skool tabs');
+  toast('⚠️ Extension reloaded — please close all Skool tabs and reopen them');
+  return true;
+}
+
 function getJwt() {
   // JWT is auto-extracted from the Skool auth_token HttpOnly cookie by the
   // service worker — the user never enters a token.
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => {
-      if (chrome.runtime.lastError) {
-        console.error('[skmw] Extension context invalidated:', chrome.runtime.lastError.message);
-        toast('⚠️ Extension reloaded — please close all Skool tabs and reopen them');
-        resolve('');
-        return;
-      }
-      resolve(res?.token || '');
-    });
+    try {
+      chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => {
+        if (chrome.runtime.lastError) {
+          handleContextLost();
+          resolve('');
+          return;
+        }
+        resolve(res?.token || '');
+      });
+    } catch (e) {
+      // Chrome throws synchronously here when the extension was reloaded or
+      // updated — the callback never fires and lastError is never set.
+      handleContextLost();
+      resolve('');
+    }
   });
 }
 function getSlug() {
@@ -925,12 +943,15 @@ function renderUpcoming(container, closeDialog) {
 // ---------------------------------------------------------------------------
 let calState = { posts: [], tab: 'upcoming' };
 async function loadScheduled() {
+  if (_contextLost) return; // extension was reloaded — stop polling silently
   try {
     const data = await apiRequest('/scheduled-posts');
     calState.posts = (data.result || data.posts || []).filter(Boolean);
   } catch (e) {
     calState.posts = [];
-    console.warn('[skmw] load scheduled failed:', e.message);
+    // Extension context invalidated → getJwt already warned the user once;
+    // don't spam this every 120s poll.
+    if (!_contextLost) console.warn('[skmw] load scheduled failed:', e.message);
   }
   updateBadge();
 }
