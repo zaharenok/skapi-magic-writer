@@ -353,6 +353,8 @@ function injectStyles() {
     .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
     .skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
     .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:${BRAND};cursor:pointer;}
+    .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
+    .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
     /* Wide schedule modal: two columns so it grows horizontally, not vertically */
     .skmw-modal-wide{max-width:780px;}
     .skmw-sched-cols{display:flex;gap:22px;align-items:flex-start;}
@@ -454,6 +456,14 @@ async function openMagicDialog() {
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
     <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
     <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
+    <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap" title="🔒 Pro feature — requires an active subscription">
+      <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
+      <select id="skmw-ctx-count" class="skmw-ctx-count">
+        <option value="10">10 posts</option>
+        <option value="20">20 posts</option>
+        <option value="30" selected>30 posts</option>
+      </select>
+    </label>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate & Insert</button>
@@ -470,6 +480,20 @@ async function openMagicDialog() {
   document.body.appendChild(overlay);
   setTimeout(() => document.getElementById('skmw-in').focus(), 60);
 
+  // Pro gate: community-context checkbox only for active subscribers.
+  // Server re-checks anyway (/ai/generate returns pro_feature_required).
+  checkProAccess().then((pro) => {
+    const wrap = document.getElementById('skmw-ctx-wrap');
+    const cb = document.getElementById('skmw-ctx');
+    const sel = document.getElementById('skmw-ctx-count');
+    if (wrap && !pro) {
+      cb.disabled = true;
+      sel.disabled = true;
+      wrap.style.opacity = '.5';
+      wrap.title = '🔒 Pro feature — requires an active subscription';
+    }
+  });
+
   const close = () => { overlay.remove(); dialogOpen = false; };
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('skmw-cancel').addEventListener('click', close);
@@ -483,11 +507,24 @@ async function openMagicDialog() {
       : `Write a community post. Plain text only, no markdown. Here are the thoughts:\n\n${input}`;
     const goBtn = document.getElementById('skmw-go');
     const loading = document.getElementById('skmw-loading');
+    const loadingText = loading.querySelector('.skmw-loading-text');
     goBtn.disabled = true;
     loading.style.display = 'block';
     hideErr();
     try {
-      const data = await apiRequest('/ai/generate', { method: 'POST', body: { prompt } });
+      // Pro feature: scrape recent feed posts as style context (client-side —
+      // the posts are already in the DOM, no server scraping needed).
+      let communityContext = '';
+      const wantContext = document.getElementById('skmw-ctx').checked;
+      if (wantContext) {
+        const maxPosts = parseInt(document.getElementById('skmw-ctx-count').value || '30', 10);
+        if (loadingText) loadingText.textContent = '📚 Collecting recent community posts...';
+        communityContext = await collectCommunityContext(maxPosts);
+        if (loadingText) loadingText.textContent = '✨ Generating your post...';
+      }
+      const body = { prompt };
+      if (communityContext) body.community_context = communityContext;
+      const data = await apiRequest('/ai/generate', { method: 'POST', body });
       if (!data.success || !data.text) throw new Error(data.error || 'No text returned');
       const attachGif = document.getElementById('skmw-magic-gif').checked;
    close();
@@ -506,12 +543,109 @@ async function openMagicDialog() {
     if (String(m).includes('subscription_required')) {
       const url = window.__skmwSubUrl || 'https://www.skool.com';
       e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+    } else if (String(m).includes('pro_feature_required')) {
+      const url = window.__skmwSubUrl || 'https://www.skool.com';
+      e.innerHTML = '🔒 Это Pro-фича: контекст из постов сообщества доступен только участникам. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
     } else {
       e.textContent = m;
     }
     e.style.display = 'block';
   }
   function hideErr() { document.getElementById('skmw-err').style.display = 'none'; }
+}
+
+// ---------------------------------------------------------------------------
+// COMMUNITY CONTEXT (Pro): scrape recent feed posts from the DOM
+// ---------------------------------------------------------------------------
+let __skmwProCache = null; // { at: epoch_ms, pro: bool }
+
+async function checkProAccess() {
+  // /ai/access is cheap, but no need to call it on every dialog open.
+  const now = Date.now();
+  if (__skmwProCache && now - __skmwProCache.at < 5 * 60 * 1000) return __skmwProCache.pro;
+  let pro = false;
+  try {
+    const data = await apiRequest('/ai/access');
+    pro = !!(data && data.pro);
+  } catch (e) {
+    console.warn('[skmw] /ai/access failed:', e && e.message);
+  }
+  __skmwProCache = { at: now, pro };
+  return pro;
+}
+
+const CTX_MAX_CHARS = 24000; // общий бюджет контекста (~6-8K токенов для free-моделей)
+const CTX_POST_CHARS = 900;  // обрезка одного поста
+
+function collectCtxPosts(posts, seen, maxPosts) {
+  // Тот же проверенный селектор, что и в серверном check_group_posts.py
+  const wrappers = document.querySelectorAll('[class*="PostItemContentWrapper"]');
+  for (const wrapper of wrappers) {
+    if (posts.length >= maxPosts) return;
+    const children = wrapper.children;
+    if (children.length < 4) continue;
+    const headerEl = children[0];
+    const titleLink = children[1];
+    const contentEl = children[2];
+    const slug = (titleLink && titleLink.href) ? titleLink.href.split('/').pop().split('?')[0] : '';
+    if (slug && seen.has(slug)) continue;
+    if (slug) seen.add(slug);
+    let author = '';
+    if (headerEl) {
+      const authorLinks = headerEl.querySelectorAll('a[href*="/@"]');
+      for (const al of authorLinks) {
+        const t = (al.innerText || al.textContent || '').trim();
+        if (t.length > 1 && !/^\d+$/.test(t)) { author = t; break; }
+      }
+    }
+    let category = '';
+    const catLink = headerEl ? headerEl.querySelector('a[href*="?c="]') : null;
+    if (catLink) category = (catLink.innerText || catLink.textContent || '').trim();
+    let content = contentEl ? (contentEl.innerText || contentEl.textContent || '').trim() : '';
+    if (!content) {
+      const title = titleLink ? (titleLink.innerText || titleLink.textContent || '').trim() : '';
+      content = title;
+    }
+    if (!content) continue;
+    if (content.length > CTX_POST_CHARS) content = content.slice(0, CTX_POST_CHARS) + '…';
+    posts.push({ author, category, content });
+  }
+}
+
+async function collectCommunityContext(maxPosts = 30) {
+  // Скроллим ленту (infinite scroll), пока не наберём maxPosts постов.
+  // Возвращаем скролл на место, чтобы не дёргать страницу пользователя.
+  const posts = [];
+  const seen = new Set();
+  const scroller = document.scrollingElement || document.documentElement;
+  const startY = window.scrollY || scroller.scrollTop || 0;
+  const maxScrolls = Math.min(12, Math.ceil(maxPosts / 3) + 2);
+  try {
+    for (let i = 0; i < maxScrolls && posts.length < maxPosts; i++) {
+      collectCtxPosts(posts, seen, maxPosts);
+      if (posts.length >= maxPosts) break;
+      const prevHeight = scroller.scrollHeight;
+      window.scrollTo(0, scroller.scrollHeight);
+      await sleep(1000);
+      if (scroller.scrollHeight === prevHeight && i > 0) break; // лента кончилась
+    }
+    collectCtxPosts(posts, seen, maxPosts);
+  } finally {
+    window.scrollTo(0, startY);
+  }
+  if (!posts.length) return '';
+
+  const parts = [];
+  let total = 0;
+  for (let i = 0; i < posts.length; i++) {
+    const p = posts[i];
+    const meta = [p.author, p.category].filter(Boolean).join(' · ');
+    const block = `[Post ${i + 1}${meta ? ' by ' + meta : ''}]\n${p.content}`;
+    if (total + block.length > CTX_MAX_CHARS) break;
+    parts.push(block);
+    total += block.length;
+  }
+  return parts.join('\n\n---\n\n');
 }
 
 // Insert a GIF via Skool's built-in picker (search -> random result)

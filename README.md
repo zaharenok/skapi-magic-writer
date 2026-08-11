@@ -7,6 +7,7 @@ Experimental sub-project: a minimal Chrome extension that lives **entirely insid
 ## What it does
 
 - **✨ Magic Post** — AI turns your raw notes into a ready-to-post community message (title + body), then drops it into the open Skool composer. You review and press Post yourself.
+- **📚 Community context (Pro)** — checkbox in the Magic Post dialog: scrapes the last 10/20/30 posts from the feed (client-side, the posts are already in the DOM) and sends them as style context, so the generated post sounds native to that community. Only unlocked for subscribed users (`GET /ai/access`); the server enforces it too (`pro_feature_required`).
 - **📅 Schedule** — save a post to the SKapi scheduler; the server publishes it automatically at the chosen time.
 - **📅 calendar icon** (top bar) — a popover listing upcoming / sent / failed scheduled posts. Click a pending one to edit.
 
@@ -16,7 +17,8 @@ The buttons appear next to **"Write something"** / **"Go Live"** in the composer
 
 Front-end only. All AI generation and scheduling go through the shared backend:
 
-- `POST https://api.skapi.pro/ai/generate` — text generation
+- `POST https://api.skapi.pro/ai/generate` — text generation (optional `community_context` for Pro users)
+- `GET https://api.skapi.pro/ai/access` — current user's Pro/access state (enables the context checkbox)
 - `GET / POST / PUT / DELETE https://api.skapi.pro/scheduled-posts` — scheduler CRUD
 
 The user's Skool session token is read **automatically** from the `auth_token`
