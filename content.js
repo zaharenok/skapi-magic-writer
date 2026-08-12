@@ -865,7 +865,13 @@ async function openScheduleDialog(post = null, prefillText = null) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: null };
+      // Remember the GIF so the publisher can re-attach the SAME one:
+      // - exact image URL if a GIF is in the composer (or was saved on the post)
+      // - plus a search term as fallback (reused from the instant-insert logic)
+      const gifUrl = isEdit ? (post?.media_url || null) : findComposerGif();
+      const wantGif = document.getElementById('skmw-magic-gif').checked;
+      const gifSearch = (wantGif || gifUrl) ? gifTermFrom(finalContent) : null;
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
       close(true);
@@ -900,6 +906,20 @@ function gifTermFrom(text) {
   const stop = new Set(['this', 'that', 'with', 'from', 'have', 'been', 'what', 'when', 'post', 'about', 'more', 'some', 'into', 'just', 'also', 'like', 'than', 'then', 'them', 'they', 'will', 'your', 'very', 'the', 'and', 'for', 'are', 'you', 'how', 'why']);
   const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
   return words.find((w) => !stop.has(w)) || 'success';
+}
+// Find the GIF currently inserted in the Skool composer, if any. Returns the
+// image URL so the scheduled publisher can re-attach the exact same GIF.
+function findComposerGif() {
+  const editor = findEditor();
+  if (!editor) return null;
+  const imgs = editor.querySelectorAll('img');
+  for (const img of imgs) {
+    const src = ((img.currentSrc || img.src) || '').toLowerCase();
+    if (src.includes('giphy') || src.includes('tenor') || src.includes('gif')) {
+      return img.currentSrc || img.src;
+    }
+  }
+  return null;
 }
 function renderMiniCalendar(container, selected, onSelect) {
   if (!container) return;
