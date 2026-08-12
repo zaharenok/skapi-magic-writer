@@ -521,8 +521,8 @@ async function openMagicDialog() {
     const wantTitle = document.getElementById('skmw-title').checked;
     if (!input) { showErr('Write something first.'); return; }
     const prompt = wantTitle
-      ? `Write a community post with a catchy short title (2-6 words) at the top, then the post content. Plain text only, no markdown. Here are the thoughts:\n\n${input}`
-      : `Write a community post. Plain text only, no markdown. Here are the thoughts:\n\n${input}`;
+      ? `Write a community post with a catchy short title (2-6 words) at the top, then the post content. Plain text only, no markdown. Output ONLY the finished post: the title on the first line, a blank line, then the content. Do not include any notes, planning, or commentary. Here are the thoughts:\n\n${input}`
+      : `Write a community post. Plain text only, no markdown. Output ONLY the finished post, no notes, planning, or commentary. Here are the thoughts:\n\n${input}`;
     const goBtn = document.getElementById('skmw-go');
     const loading = document.getElementById('skmw-loading');
     const loadingText = loading.querySelector('.skmw-loading-text');
