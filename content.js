@@ -660,7 +660,7 @@ async function openMagicDialog() {
       badge.style.display = 'block';
     } else if (acc.state === 'trial_expired') {
       const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
-      badge.innerHTML = `⚠️ Trial over — posts include an upgrade note · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Get full access</a>`;
+      badge.innerHTML = `🔒 Trial over — subscribe to keep creating · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Join the community</a>`;
       badge.style.display = 'block';
     } else if (acc.state === 'subscribed') {
       badge.innerHTML = '⭐ Full access';
@@ -1098,7 +1098,16 @@ async function openScheduleDialog(post = null, prefillText = null) {
       catch (e) { showErr(e.message); }
     });
   }
-  function showErr(m) { const e = document.getElementById('skmw-s-err'); e.textContent = m; e.style.display = 'block'; }
+  function showErr(m) {
+    const e = document.getElementById('skmw-s-err');
+    if (String(m).includes('subscription_required')) {
+      const url = window.__skmwSubUrl || 'https://www.skool.com';
+      e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+    } else {
+      e.textContent = m;
+    }
+    e.style.display = 'block';
+  }
   function hideErr() { document.getElementById('skmw-s-err').style.display = 'none'; }
 }
 
