@@ -445,7 +445,7 @@ function injectStyles() {
     .skmw-pop .skmw-edit-header{margin-bottom:4px;}
     .skmw-pop .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
     .skmw-pop .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
-    .skmw-pop .skmw-btn{white-space:nowrap;}
+    .skmw-pop.editing{width:520px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 0;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
     .skmw-tab.active{background:${BRAND};border-color:${INK};}
