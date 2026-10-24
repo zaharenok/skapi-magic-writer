@@ -40,5 +40,15 @@
       ],
       "run_at": "document_idle"
     }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pencil_sound.wav"
+      ],
+      "matches": [
+        "https://*.skool.com/*"
+      ]
+    }
   ]
 }

@@ -1070,22 +1070,13 @@ function notifyEnabled(cb) {
   catch (_) { cb(true); }
 }
 function ding() {
-  // Two-tone chime via WebAudio — no bundled asset. Silent-fails when the
-  // tab never got a user gesture (autoplay policy).
+  // Bundled pencil-sound chime (user-provided WAV). Audio elements load
+  // chrome-extension:// resources, so the file must stay listed in
+  // manifest web_accessible_resources. Silent-fails under autoplay policy.
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const g = ctx.createGain();
-    g.gain.value = 0.06;
-    g.connect(ctx.destination);
-    [[880, 0], [1174.66, 0.16]].forEach(([f, at]) => {
-      const o = ctx.createOscillator();
-      o.type = 'sine';
-      o.frequency.value = f;
-      o.connect(g);
-      o.start(ctx.currentTime + at);
-      o.stop(ctx.currentTime + at + 0.22);
-    });
-    setTimeout(() => ctx.close().catch(() => {}), 800);
+    const a = new Audio(chrome.runtime.getURL('pencil_sound.wav'));
+    a.volume = 0.9;
+    a.play().catch(() => {});
   } catch (_) {}
 }
 function notifyPublished(post) {
