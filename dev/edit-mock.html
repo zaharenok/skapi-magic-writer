@@ -25,7 +25,7 @@
   .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;cursor:move;user-select:none;}
   .skmw-modal .sub{color:#374151;font-size:13px;margin:0 0 16px;}
   .skmw-modal label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
-  .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
+  .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
   .skmw-modal textarea{min-height:120px;resize:vertical;}
   .skmw-modal input:focus,.skmw-modal textarea:focus{outline:none;border-color:#FF90E8;}
   .skmw-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;}
@@ -34,21 +34,29 @@
   .skmw-btn-pink{background:#FF90E8;color:#0A0A0A;}
   .skmw-btn-pink:disabled{opacity:.5;cursor:wait;}
   .skmw-err{background:#FEF2F2;border:2px solid #FCA5A5;color:#991B1B;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none;}
-  .skmw-trial{font-size:13px;font-weight:600;color:#374151;background:#F9FAFB;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin:0 0 12px;}
+  .skmw-loading{margin-top:16px;text-align:center;}
+  .skmw-progress{width:100%;height:8px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:10px;}
+  .skmw-progress-bar{height:100%;background:linear-gradient(90deg, #FF90E8, #0A0A0A);background-size:200% 100%;animation:skmw-progress-anim 1.5s ease-in-out infinite;}
+  @keyframes skmw-progress-anim{0%{background-position:100% 0;}100%{background-position:0 0;}}
+  .skmw-loading-text{font-size:13px;color:#6b7280;margin:0;font-weight:500;}
+  .skmw-res{display:none;margin-top:14px;}
   .skmw-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:92vw;max-height:80vh;overflow:auto;background:#fff;color:#0A0A0A;border:2px solid #0A0A0A;border-radius:14px;box-shadow:6px 6px 0 rgba(0,0,0,.12);z-index:2147482999;font-family:ui-sans-serif,system-ui,sans-serif;}
   .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;cursor:move;user-select:none;}
   .skmw-pop-h h3{margin:0;font-size:15px;pointer-events:none;}
   .skmw-pop-x{background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;}
-  .skmw-pop.editing{width:680px;}
   .skmw-pop label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
   .skmw-pop textarea{width:100%;box-sizing:border-box;min-height:150px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;resize:vertical;}
-  .skmw-pop textarea:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:#FF90E8;}
+  .skmw-pop textarea:focus,.skmw-pop input[type=text]:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:#FF90E8;}
+  .skmw-pop input[type=text]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;}
   .skmw-pop .skmw-dt{width:100%;box-sizing:border-box;margin-top:2px;}
   .skmw-pop .skmw-edit-header{margin-bottom:4px;}
   .skmw-pop .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
   .skmw-pop .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
-  .skmw-pop .skmw-btn{white-space:nowrap;}
-  .skmw-tabs{display:flex;gap:4px;padding:8px 10px 0;}
+  .skmw-pop.editing{width:520px;}
+  .skmw-pop .skmw-ac{display:inline-flex;margin:0;}
+  .skmw-pop.editing #skmw-list{padding:8px 14px 14px;}
+  .skmw-pop.editing textarea{min-height:280px;}
+  .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
   .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
   .skmw-tab.active{background:#FF90E8;border-color:#0A0A0A;}
   .skmw-item{padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;}
@@ -61,7 +69,7 @@
   .skmw-failed{background:#FEE2E2;color:#991B1B;}
   .skmw-grp{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;max-width:45%;}
   .skmw-grp-ic{width:18px;height:18px;border-radius:50%;background:#FF90E8;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0;}
-  .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
+  .skmw-grp a{color:#7c3aed;text-decoration:none;font-weight:600;}
   .skmw-grp a:hover{text-decoration:underline;}
   .skmw-cd{font-weight:700;color:#7c3aed;white-space:nowrap;}
   .skmw-x{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px;float:right;}
@@ -71,29 +79,36 @@
   .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
   .skmw-empty .skmw-btn{margin-top:14px;}
   .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0A0A0A;color:#fff;padding:12px 22px;border-radius:12px;border:2px solid #0A0A0A;font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
-  .skmw-pop.editing{width:520px;}
-  .skmw-pop .skmw-ac{display:inline-flex;margin:0;}
-  .skmw-pop.editing #skmw-list{padding:8px 14px 14px;}
-  .skmw-pop.editing textarea{min-height:280px;}
+  .skmw-s-inline{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin:0 6px;line-height:1;transition:background .12s,border-color .12s;}
+  .skmw-s-inline:hover{background:#f9fafb;border-color:#9ca3af;}
+  /* Schedule dialog: presets, publish time, notify */
   .skmw-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
   .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
   .skmw-preset:hover{border-color:#FF90E8;color:#0A0A0A;}
   .skmw-preset.active{background:#FF90E8;border-color:#0A0A0A;color:#0A0A0A;}
-  .skmw-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
-  .skmw-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#9ca3af;padding:2px 0;}
-  .skmw-cal-day{text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;color:#374151;border:1.5px solid transparent;}
-  .skmw-cal-day:hover{background:#f3f4f6;}
-  .skmw-cal-day.muted{color:#d1d5db;cursor:default;}
-  .skmw-cal-day.today{font-weight:800;}
-  .skmw-cal-day.past{color:#e5e7eb;cursor:not-allowed;}
-  .skmw-cal-day.selected{background:#FF90E8;color:#0A0A0A;font-weight:800;border-color:#0A0A0A;}
-  .skmw-dt{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
+  .skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
+  .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:#FF90E8;cursor:pointer;}
+  .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
+  .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
+  /* Wide schedule modal: two columns so it grows horizontally, not vertically */
+  .skmw-modal-wide{max-width:780px;}
+  .skmw-sched-cols{display:flex;gap:22px;align-items:flex-start;}
+  .skmw-sched-left{flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;}
+  .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
+  .skmw-sched-left>label>span{margin-left:4px;font-weight:400;color:#9ca3af;text-transform:none;}
+  .skmw-sched-left>textarea{width:100%;box-sizing:border-box;min-height:80px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
+  .skmw-sched-right{flex:1;min-width:0;border-left:1.5px solid #f3f4f6;padding-left:20px;}
+  .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
+  .skmw-sched-right h4:not(:first-child){margin-top:16px;}
+  .skmw-dt{width:100%;box-sizing:border-box;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
   .skmw-dt:focus{outline:none;border-color:#FF90E8;}
   .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
   .skmw-edit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
   .skmw-btn-back{background:none;border:none;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;}
   .skmw-btn-back:hover{background:#f3f4f6;color:#0A0A0A;}
+  .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
   .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
+  @media (max-width:680px){.skmw-sched-cols{flex-direction:column;}.skmw-sched-right{border-left:none;border-top:1.5px solid #f3f4f6;padding-left:0;padding-top:16px;}}
 </style>
 </head>
 <body>
@@ -360,7 +375,6 @@ function openScheduleMock() {
   const composerGif = 'https://media0.giphy.com/media/Tz30IjVH9wFich4MLO/giphy.gif';
   let chosen = atDayOffset(1, 9, 0);
   const minDt = toDtLocal(new Date());
-  const previewHtml = escapeHtml(composerBody.slice(0, 280)) + (composerBody.length > 280 ? '…' : '');
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>📅 Schedule post</h2>
@@ -368,20 +382,18 @@ function openScheduleMock() {
     <div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
-        <label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div>
-        <label style="margin-top:14px;">Title</label>
+        <label>Title</label>
         <input type="text" id="skmw-s-title" value="${escapeHtml(composerTitle)}" placeholder="Post title">
+        <label style="margin-top:14px;">Post content</label>
+        <textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(composerBody)}</textarea>
         <label style="margin-top:14px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <div class="skmw-cal-grid" id="skmw-s-cal"></div>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;" checked> 🔔 Notify when it goes out (system notification + sound)</label>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
         <div class="skmw-presets" id="skmw-s-presets"></div>
-        <h4>Your scheduled posts</h4>
-        <div id="skmw-s-up"></div>
       </div>
     </div>
     <div class="skmw-actions">
@@ -404,13 +416,6 @@ function openScheduleMock() {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
-  function renderCal() {
-    renderMiniCalendar(document.getElementById('skmw-s-cal'), chosen, (d) => {
-      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0); // keep the time when changing the day
-      chosen = d; syncFromChosen(); renderCal();
-    });
-  }
-  renderCal();
   syncFromChosen();
   const presets = [
     { label: '⚡ In 1 hour', at: () => new Date(Date.now() + 3600 * 1000) },
@@ -423,14 +428,9 @@ function openScheduleMock() {
   const $presets = document.getElementById('skmw-s-presets');
   presets.forEach((p) => {
     const b = el(`<button class="skmw-preset" type="button">${p.label}</button>`);
-    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); renderCal(); });
+    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); });
     $presets.appendChild(b);
   });
-  const up = document.getElementById('skmw-s-up');
-  const pend = calState.posts.filter((p) => (p.status || 'pending') === 'pending').sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
-  up.innerHTML = pend.length
-    ? pend.slice(0, 6).map((p) => `<div class="skmw-up-item"><span class="t">${new Date(p.scheduled_for).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="c">${escapeHtml((p.title || p.content || '').slice(0, 60))}</span></div>`).join('')
-    : '<div style="font-size:12px;color:#9ca3af;padding:4px 8px;">None yet.</div>';
   const showErr = (msg) => { const e = document.getElementById('skmw-s-err'); e.textContent = msg; e.style.display = 'block'; };
   const hideErr = () => { document.getElementById('skmw-s-err').style.display = 'none'; };
   document.getElementById('skmw-s-cancel').addEventListener('click', close);
@@ -444,7 +444,8 @@ function openScheduleMock() {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     await new Promise((r) => setTimeout(r, 400)); // имитация POST
-    calState.posts.unshift({ id: Date.now(), status: 'pending', community_slug: 'ai-pays-my-bills-7018', community_url: 'https://www.skool.com/ai-pays-my-bills-7018', content: composerBody, title: titleVal, scheduled_for: chosen.toISOString(), media_url: composerGif, gif_search: null });
+    const finalContent = document.getElementById('skmw-s-content').value.trim();
+    calState.posts.unshift({ id: Date.now(), status: 'pending', community_slug: 'ai-pays-my-bills-7018', community_url: 'https://www.skool.com/ai-pays-my-bills-7018', content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), media_url: composerGif, gif_search: null });
     close();
     toast('✅ Post scheduled');
     renderCalendar();

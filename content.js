@@ -415,7 +415,7 @@ function injectStyles() {
     .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;cursor:move;user-select:none;}
     .skmw-modal .sub{color:#374151;font-size:13px;margin:0 0 16px;}
     .skmw-modal label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
-    .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
+    .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
     .skmw-modal textarea{min-height:120px;resize:vertical;}
     .skmw-modal input:focus,.skmw-modal textarea:focus{outline:none;border-color:${BRAND};}
     .skmw-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;}
@@ -435,9 +435,8 @@ function injectStyles() {
     .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;cursor:move;user-select:none;}
     .skmw-pop-h h3{margin:0;font-size:15px;pointer-events:none;}
     .skmw-pop-x{background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;}
-    /* Edit form inside the popup: widen + proper form styling (the generic
-       form CSS is scoped to .skmw-modal, which the popup is not). */
-    .skmw-pop.editing{width:680px;}
+    /* Edit form inside the popup: proper form styling (the generic form CSS
+       is scoped to .skmw-modal, which the popup is not). */
     .skmw-pop label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
     .skmw-pop textarea{width:100%;box-sizing:border-box;min-height:150px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;resize:vertical;}
     .skmw-pop textarea:focus,.skmw-pop input[type=text]:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:${BRAND};}
@@ -465,7 +464,6 @@ function injectStyles() {
     .skmw-grp-ic{width:18px;height:18px;border-radius:50%;background:${BRAND};color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0;}
     .skmw-grp a{color:#7c3aed;text-decoration:none;font-weight:600;}
     .skmw-grp a:hover{text-decoration:underline;}
-    .skmw-up-item .t{white-space:nowrap;}
     .skmw-cd{font-weight:700;color:#7c3aed;white-space:nowrap;}
     .skmw-x{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px;float:right;}
     .skmw-x:hover{color:#dc2626;}
@@ -477,32 +475,11 @@ function injectStyles() {
     /* Compact Schedule button that fits inside Skool's composer button row */
     .skmw-s-inline{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin:0 6px;line-height:1;transition:background .12s,border-color .12s;}
     .skmw-s-inline:hover{background:#f9fafb;border-color:#9ca3af;}
-    /* Schedule dialog: preview, presets, calendar, time, upcoming list */
-    .skmw-preview{background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:13px;color:#374151;max-height:90px;overflow:auto;white-space:pre-wrap;line-height:1.4;}
-    .skmw-preview .skmw-preview-empty{color:#9ca3af;font-style:italic;}
+    /* Schedule dialog: presets, publish time, notify */
     .skmw-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
     .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
     .skmw-preset:hover{border-color:${BRAND};color:${INK};}
     .skmw-preset.active{background:${BRAND};border-color:${INK};color:${INK};}
-    .skmw-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
-    .skmw-cal-dow{text-align:center;font-size:10px;font-weight:700;color:#9ca3af;padding:2px 0;}
-    .skmw-cal-day{text-align:center;font-size:12px;padding:6px 0;border-radius:7px;cursor:pointer;color:#374151;border:1.5px solid transparent;}
-    .skmw-cal-day:hover{background:#f3f4f6;}
-    .skmw-cal-day.muted{color:#d1d5db;cursor:default;}
-    .skmw-cal-day.muted:hover{background:transparent;}
-    .skmw-cal-day.today{font-weight:800;}
-    .skmw-cal-day.past{color:#e5e7eb;cursor:not-allowed;}
-    .skmw-cal-day.past:hover{background:transparent;}
-    .skmw-cal-day.selected{background:${BRAND};color:${INK};font-weight:800;border-color:${INK};}
-    .skmw-time-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
-    .skmw-time-row select{padding:7px 8px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;}
-    .skmw-when{font-size:13px;font-weight:700;color:#374151;margin-top:14px;padding:8px 10px;background:#faf5ff;border:1.5px solid #e9d5ff;border-radius:8px;}
-    .skmw-up{margin-top:16px;border-top:1.5px solid #f3f4f6;padding-top:10px;}
-    .skmw-up h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
-    .skmw-up-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;font-size:12px;}
-    .skmw-up-item:hover{background:#f9fafb;}
-    .skmw-up-item .t{font-weight:700;color:#374151;min-width:96px;}
-    .skmw-up-item .c{color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
     .skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
     .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:${BRAND};cursor:pointer;}
     .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
@@ -513,12 +490,11 @@ function injectStyles() {
     .skmw-sched-left{flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;}
     .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
     .skmw-sched-left>label>span{margin-left:4px;font-weight:400;color:#9ca3af;text-transform:none;}
-    .skmw-sched-left>textarea,.skmw-sched-left>.skmw-preview{width:100%;min-height:80px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
-    .skmw-preview-empty{color:#9ca3af;font-style:italic;display:flex;align-items:center;justify-content:center;height:100%;min-height:60px;}
+    .skmw-sched-left>textarea{width:100%;box-sizing:border-box;min-height:80px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
     .skmw-sched-right{flex:1;min-width:0;border-left:1.5px solid #f3f4f6;padding-left:20px;}
     .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
     .skmw-sched-right h4:not(:first-child){margin-top:16px;}
-    .skmw-dt{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
+    .skmw-dt{width:100%;box-sizing:border-box;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
     .skmw-dt:focus{outline:none;border-color:${BRAND};}
     .skmw-timeslot{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;margin-top:6px;}
     .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
@@ -919,9 +895,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
 
 
-  const previewHtml = content
-    ? escapeHtml(content.slice(0, 280)) + (content.length > 280 ? '…' : '')
-    : '<span class="skmw-preview-empty">Nothing in the composer yet — write your post first.</span>';
   const minDt = toDtLocal(new Date());
   // Capture the composer GIF once, before the dialog can close the composer —
   // the save handler reuses this snapshot instead of re-querying the DOM.
@@ -940,19 +913,16 @@ async function openScheduleDialog(post = null, prefillText = null) {
     ${!isEdit ? (gifSavedNote ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : (hasComposerMedia ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF picked via the 🎬 GIF flow is carried over. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>' : '')) : editGifNote}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
-        ${isEdit
-          ? `<label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title"><label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
-          : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div><label style="margin-top:14px;">Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">`}
+        <label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">
+        <label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
         <label style="margin-top:14px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <div class="skmw-cal-grid" id="skmw-s-cal"></div>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out (system notification + sound)</label>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
         <div class="skmw-presets" id="skmw-s-presets"></div>
-        ${!isEdit ? '<h4>Your scheduled posts</h4><div id="skmw-s-up"></div>' : ''}
       </div>
     </div>
     <div class="skmw-actions">
@@ -1033,20 +1003,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const $presets = document.getElementById('skmw-s-presets');
   presets.forEach((p) => {
     const b = el(`<button class="skmw-preset" type="button">${p.label}</button>`);
-    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); renderCalendar(); });
+    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); });
     $presets.appendChild(b);
   });
 
-  function renderCalendar() {
-    renderMiniCalendar(document.getElementById('skmw-s-cal'), chosen, (d) => {
-      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0); // keep the time when changing the day
-      chosen = d; syncFromChosen(); renderCalendar();
-    });
-  }
-  renderCalendar();
   syncFromChosen();
 
-  if (!isEdit) renderUpcoming(document.getElementById('skmw-s-up'), close);
 
   document.getElementById('skmw-s-save').addEventListener('click', async () => {
     console.log('[skmw] schedule save clicked', { isEdit, id: post?.id, chosen: chosen.toISOString() });
@@ -1054,7 +1016,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
     // user edits the time and clicks Save immediately.
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) chosen = v;
-    const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
+    const finalContent = document.getElementById('skmw-s-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
     const titleVal = document.getElementById('skmw-s-title').value.trim();
     if (!titleVal) return showErr('Post title is empty.');
@@ -1180,45 +1142,6 @@ function findComposerGif() {
   }
   return null;
 }
-function renderMiniCalendar(container, selected, onSelect) {
-  if (!container) return;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const view = new Date(selected.getFullYear(), selected.getMonth(), 1);
-  const firstDow = (view.getDay() + 6) % 7; // Mon=0
-  const daysInMonth = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
-  let html = '<div class="skmw-cal-dow">Mo</div><div class="skmw-cal-dow">Tu</div><div class="skmw-cal-dow">We</div><div class="skmw-cal-dow">Th</div><div class="skmw-cal-dow">Fr</div><div class="skmw-cal-dow">Sa</div><div class="skmw-cal-dow">Su</div>';
-  for (let i = 0; i < firstDow; i++) html += '<div class="skmw-cal-day muted"></div>';
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(view.getFullYear(), view.getMonth(), d);
-    const past = date < today;
-    const isToday = date.getTime() === today.getTime();
-    const isSel = date.getFullYear() === selected.getFullYear() && date.getMonth() === selected.getMonth() && date.getDate() === selected.getDate();
-    const cls = 'skmw-cal-day' + (past ? ' past' : '') + (isToday ? ' today' : '') + (isSel ? ' selected' : '');
-    html += `<div class="${cls}" data-d="${d}">${d}</div>`;
-  }
-  container.innerHTML = html;
-  container.querySelectorAll('.skmw-cal-day:not(.muted):not(.past)').forEach((node) => {
-    node.addEventListener('click', () => {
-      const d = parseInt(node.dataset.d);
-      const picked = new Date(view.getFullYear(), view.getMonth(), d, selected.getHours(), selected.getMinutes());
-      onSelect(picked);
-    });
-  });
-}
-function renderUpcoming(container, closeDialog) {
-  if (!container) return;
-  const pending = calState.posts.filter((p) => (p.status || 'pending') === 'pending').sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
-  if (!pending.length) { container.innerHTML += '<div style="font-size:12px;color:#9ca3af;padding:4px 8px;">None yet.</div>'; return; }
-  pending.slice(0, 6).forEach((p) => {
-    const d = new Date(p.scheduled_for);
-    const grp = p.community_slug
-      ? `<div class="skmw-grp"><span class="skmw-grp-ic">${escapeHtml(p.community_slug.slice(0, 1))}</span><a href="${escapeHtml(p.community_url || ('https://www.skool.com/' + p.community_slug))}" target="_blank" rel="noopener" title="Open community">${escapeHtml(p.community_slug)}</a></div>`
-      : '';
-    const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>${grp}<span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
-    item.addEventListener('click', (e) => { if (e.target.closest('a')) return; closeDialog(true); setTimeout(() => openScheduleDialog(p), 50); });
-    container.appendChild(item);
-  });
-}
 
 // ---------------------------------------------------------------------------
 // CALENDAR POPOVER (MVP: list with tabs)
@@ -1271,7 +1194,7 @@ function makeDraggable(pop, storageKey, headerSel = '.skmw-pop-h') {
     y: Math.max(8, Math.min(y, window.innerHeight - 48)),
   });
   h.addEventListener('mousedown', (e) => {
-    if (e.target.closest('button, input, textarea, select, a, label, .skmw-preview, .skmw-cal-grid, .skmw-presets')) return;
+    if (e.target.closest('button, input, textarea, select, a, label, .skmw-presets')) return;
     e.preventDefault();
     const r = pop.getBoundingClientRect();
     const dx = e.clientX - r.left;
