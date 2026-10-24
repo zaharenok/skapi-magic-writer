@@ -498,6 +498,9 @@ function injectStyles() {
     .skmw-dt:focus{outline:none;border-color:${BRAND};}
     .skmw-timeslot{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;margin-top:6px;}
     .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
+    .skmw-chip{display:inline-flex;align-items:center;gap:6px;width:fit-content;max-width:100%;box-sizing:border-box;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;margin:0 0 10px;}
+    .skmw-chip-ok{background:#DCFCE7;border:1px solid #16A34A;color:#166534;}
+    .skmw-chip-warn{background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;}
     .skmw-edit-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
     .skmw-btn-back{background:none;border:none;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;}
     .skmw-btn-back:hover{background:#f3f4f6;color:${INK};}
@@ -903,13 +906,13 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const gifSavedNote = composerGif || lastGifTerm;
   // Media note for edit mode: exact GIF URL or its search fallback.
   const editGifNote = (isEdit && (post?.media_url || post?.gif_search))
-    ? `<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be attached:</strong> ${gifDesc(post?.media_url, post?.gif_search)}</div>`
+    ? `<div class="skmw-chip skmw-chip-ok">🎬 GIF: ${gifDesc(post?.media_url, post?.gif_search)}</div>`
     : '';
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
-    ${!isEdit ? (gifSavedNote ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : (hasComposerMedia ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF picked via the 🎬 GIF flow is carried over. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>' : '')) : editGifNote}
+    ${!isEdit ? (gifSavedNote ? '<div class="skmw-chip skmw-chip-ok">🎬 GIF will be saved with this post</div>' : (hasComposerMedia ? '<div class="skmw-chip skmw-chip-warn">⚠️ Only 🎬-picked GIFs carry over — uploaded files won\'t</div>' : '')) : editGifNote}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         <label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">
