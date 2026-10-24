@@ -65,6 +65,10 @@ async function closeComposer() {
   const originalConfirm = window.confirm;
   window.confirm = () => true;
   try {
+    // While this flag is set, the discard watcher (MutationObserver, runs
+    // pre-paint) hides Skool's "discard your post?" modal the moment it
+    // mounts and clicks its accept button — the user never sees it flash.
+    skmwHideGuardsUntil = Date.now() + 9000;
     clearComposer();
     // Give React/ProseMirror a moment to process the cleared content
     await new Promise((r) => setTimeout(r, 200));
@@ -336,7 +340,19 @@ function skmwFindAccept(scope) {
 // Global watcher: whenever Skool shows a "you haven't finished your post"
 // confirmation (any code path — scheduled close, manual close, navigation),
 // auto-click the accept (leave/discard) button so the dialog never blocks.
+let skmwHideGuardsUntil = 0; // pre-paint hide window for Skool's discard modal
 let _discardWatcherOn = false;
+function skmwAcceptHidden(modal) {
+  // Hidden-tolerant accept pick (closeComposer's poll may run after the
+  // watcher already set display:none): Leave/Discard-style label, never a
+  // Stay/Keep-editing one.
+  const btns = [...modal.querySelectorAll('button, [role="button"]')];
+  return btns.find((b) => {
+    const t = (b.textContent || '').trim();
+    return t && t.length <= 40 && !SKMW_MODAL_DENY.test(t) && SKMW_MODAL_ACCEPT.test(t);
+  }) || null;
+}
+
 function startDiscardWatcher() {
   if (_discardWatcherOn) return;
   _discardWatcherOn = true;
@@ -383,6 +399,21 @@ function startDiscardWatcher() {
     }
   };
   const obs = new MutationObserver(() => {
+    // Pre-paint kill switch: during a scheduled composer close, hide the
+    // guard modal and accept it the moment it mounts — no visible flash.
+    if (Date.now() < skmwHideGuardsUntil) {
+      const hits = [
+        ...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'),
+      ].filter((m) => SKMW_DISCARD_TEXT.test(m.textContent || ''));
+      for (const m of hits) {
+        m.style.display = 'none';
+        const btn = skmwFindAccept(m) || skmwAcceptHidden(m);
+        if (btn) {
+          btn.click();
+          console.log('[skmw] Guard modal hidden + auto-accepted pre-paint');
+        }
+      }
+    }
     if (scheduled) return;
     scheduled = true;
     // setTimeout, not requestAnimationFrame — rAF never fires in background
