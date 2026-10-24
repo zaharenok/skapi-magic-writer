@@ -22,6 +22,23 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     readJwt().then((token) => sendResponse({ token }));
     return true; // async response
   }
+  if (msg?.type === 'SKMW_NOTIFY') {
+    // Post published — system-level notification so the user sees it even
+    // when skool.com is in a background tab. No click handler: MV3 service
+    // workers die before onclicked fires reliably; the toast in the tab
+    // remains the interactive path.
+    try {
+      chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon128.png',
+        title: msg.title || 'SKapi Magic Writer',
+        message: msg.message || '',
+        priority: 1,
+      });
+    } catch (e) { /* notifications unavailable — tab toast still shows */ }
+    sendResponse({ ok: true });
+    return true;
+  }
   return true;
 });
 

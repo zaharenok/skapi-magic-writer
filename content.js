@@ -423,8 +423,8 @@ function injectStyles() {
     .skmw-loading-text{font-size:13px;color:#6b7280;margin:0;font-weight:500;}
     .skmw-res{display:none;margin-top:14px;}
     .skmw-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:92vw;max-height:80vh;overflow:auto;background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:14px;box-shadow:6px 6px 0 rgba(0,0,0,.12);z-index:2147482999;font-family:ui-sans-serif,system-ui,sans-serif;}
-    .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;}
-    .skmw-pop-h h3{margin:0;font-size:15px;}
+    .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;cursor:move;user-select:none;}
+    .skmw-pop-h h3{margin:0;font-size:15px;pointer-events:none;}
     .skmw-pop-x{background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;}
     /* Edit form inside the popup: widen + proper form styling (the generic
        form CSS is scoped to .skmw-modal, which the popup is not). */
@@ -453,6 +453,11 @@ function injectStyles() {
     .skmw-grp a{color:#7c3aed;text-decoration:none;font-weight:600;}
     .skmw-grp a:hover{text-decoration:underline;}
     .skmw-up-item .t{white-space:nowrap;}
+    .skmw-cd{font-weight:700;color:#7c3aed;white-space:nowrap;}
+    .skmw-x{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px;float:right;}
+    .skmw-x:hover{color:#dc2626;}
+    .skmw-ac{display:inline-flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:#6b7280;margin-right:8px;white-space:nowrap;}
+    .skmw-ac input{margin:0;cursor:pointer;}
     .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
     .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${INK};color:#fff;padding:12px 22px;border-radius:12px;border:2px solid ${INK};font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
     /* Compact Schedule button that fits inside Skool's composer button row */
@@ -896,6 +901,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
         <div class="skmw-cal-grid" id="skmw-s-cal"></div>
+        <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out (system notification + sound)</label>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
@@ -962,6 +968,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); renderCalendar(); }
   });
+
+  const $ntf = document.getElementById('skmw-s-ntf');
+  if ($ntf) {
+    notifyEnabled((on) => { $ntf.checked = on; });
+    $ntf.addEventListener('change', () => { try { chrome.storage.local.set({ skmw_notify: $ntf.checked }); } catch (_) {} });
+  }
 
   const presets = [
     { label: '⚡ In 1 hour', at: () => new Date(Date.now() + 3600 * 1000) },
@@ -1051,6 +1063,37 @@ function atToday(h, m) { const d = new Date(); d.setHours(h, m, 0, 0); if (d < n
 function atDayOffset(days, h, m) { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(h, m, 0, 0); return d; }
 function nearestMin(m) { return [0, 15, 30, 45].reduce((b, x) => Math.abs(x - m) < Math.abs(b - m) ? x : b, 0); }
 function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function fmtCd(ms) { const m = Math.floor(ms / 60000); const h = Math.floor(m / 60); return h > 0 ? `${h}h ${m % 60}m` : `${m}m`; }
+// Notification setting: default ON (undefined → enabled)
+function notifyEnabled(cb) {
+  try { chrome.storage.local.get(['skmw_notify'], (r) => cb(r ? r.skmw_notify !== false : true)); }
+  catch (_) { cb(true); }
+}
+function ding() {
+  // Two-tone chime via WebAudio — no bundled asset. Silent-fails when the
+  // tab never got a user gesture (autoplay policy).
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const g = ctx.createGain();
+    g.gain.value = 0.06;
+    g.connect(ctx.destination);
+    [[880, 0], [1174.66, 0.16]].forEach(([f, at]) => {
+      const o = ctx.createOscillator();
+      o.type = 'sine';
+      o.frequency.value = f;
+      o.connect(g);
+      o.start(ctx.currentTime + at);
+      o.stop(ctx.currentTime + at + 0.22);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 800);
+  } catch (_) {}
+}
+function notifyPublished(post) {
+  const what = (post.title || (post.content || '').split('\n')[0] || 'Your post').slice(0, 90);
+  try { toast(`✅ Published: ${what}`); } catch (_) {}
+  try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: 'SKapi Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
+  ding();
+}
 function gifTermFrom(text) {
   const stop = new Set(['this', 'that', 'with', 'from', 'have', 'been', 'what', 'when', 'post', 'about', 'more', 'some', 'into', 'just', 'also', 'like', 'than', 'then', 'them', 'they', 'will', 'your', 'very', 'the', 'and', 'for', 'are', 'you', 'how', 'why']);
   const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
@@ -1120,12 +1163,19 @@ function renderUpcoming(container, closeDialog) {
 // ---------------------------------------------------------------------------
 // CALENDAR POPOVER (MVP: list with tabs)
 // ---------------------------------------------------------------------------
-let calState = { posts: [], tab: 'upcoming' };
+let calState = { posts: [], tab: 'upcoming', statusById: {} };
 async function loadScheduled() {
   if (_contextLost) return; // extension was reloaded — stop polling silently
   try {
     const data = await apiRequest('/scheduled-posts');
     calState.posts = (data.result || data.posts || []).filter(Boolean);
+    // Detect pending → published transitions (notify once per post; first
+    // load after page open stays silent — no baseline to compare against)
+    const prev = calState.statusById || {};
+    const newly = calState.posts.filter((p) => (p.status || '') === 'published' && prev[p.id] === 'pending');
+    calState.statusById = {};
+    calState.posts.forEach((p) => { calState.statusById[p.id] = p.status || 'pending'; });
+    if (newly.length) notifyEnabled((on) => { if (on) newly.forEach(notifyPublished); });
   } catch (e) {
     calState.posts = [];
     // Extension context invalidated → getJwt already warned the user once;
@@ -1133,6 +1183,8 @@ async function loadScheduled() {
     if (!_contextLost) console.warn('[skmw] load scheduled failed:', e.message);
   }
   updateBadge();
+  // Auto-clean Sent rows older than 7 days when the user enabled 🧹
+  try { chrome.storage.local.get(['skmw_autoclean'], (r) => { if (r && r.skmw_autoclean) autoCleanSent(false); }); } catch (_) {}
 }
 function updateBadge() {
   const badge = document.querySelector('.skmw-scheduled .b');
@@ -1151,9 +1203,70 @@ function refreshCalendar() {
     if (document.querySelector('.skmw-pop')) renderCalendar();
   });
 }
+function makeDraggable(pop, storageKey) {
+  const h = pop.querySelector('.skmw-pop-h');
+  if (!h) return;
+  const clamp = (x, y, r) => ({
+    x: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)),
+    y: Math.max(8, Math.min(y, window.innerHeight - 48)),
+  });
+  h.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button, input, a, label')) return;
+    e.preventDefault();
+    const r = pop.getBoundingClientRect();
+    const dx = e.clientX - r.left;
+    const dy = e.clientY - r.top;
+    pop.style.transform = 'none';
+    const move = (ev) => {
+      const c = clamp(ev.clientX - dx, ev.clientY - dy, r);
+      pop.style.left = c.x + 'px';
+      pop.style.top = c.y + 'px';
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move, true);
+      document.removeEventListener('mouseup', up, true);
+      const c = clamp(parseFloat(pop.style.left) || r.left, parseFloat(pop.style.top) || r.top, r);
+      chrome.storage.local.set({ [storageKey]: { x: c.x, y: c.y } });
+    };
+    document.addEventListener('mousemove', move, true);
+    document.addEventListener('mouseup', up, true);
+  });
+  // Restore the remembered position after the popup is laid out
+  chrome.storage.local.get([storageKey], (s) => {
+    const p = s && s[storageKey];
+    if (!p || !pop.isConnected) return;
+    const r = pop.getBoundingClientRect();
+    if (p.x > window.innerWidth - 80 || p.y > window.innerHeight - 60) return; // off-screen (resize) → keep centered
+    const c = clamp(p.x, p.y, r);
+    pop.style.transform = 'none';
+    pop.style.left = c.x + 'px';
+    pop.style.top = c.y + 'px';
+  });
+}
+let _autocleanRunning = false;
+async function autoCleanSent(notify) {
+  if (_autocleanRunning) return;
+  const stale = calState.posts.filter((p) => (p.status || '') === 'published' &&
+    new Date(p.published_at || p.scheduled_for).getTime() < Date.now() - 7 * 24 * 3600 * 1000);
+  if (!stale.length) { if (notify) toast('🧹 Nothing to clean'); return; }
+  _autocleanRunning = true;
+  let n = 0;
+  for (const p of stale) {
+    try { await apiRequest('/scheduled-posts', { method: 'DELETE', body: { id: p.id } }); n++; }
+    catch (e) { console.warn('[skmw] autoclean delete failed:', e.message); break; }
+  }
+  _autocleanRunning = false;
+  if (n) {
+    toast(`🧹 Cleaned ${n} old sent post${n > 1 ? 's' : ''}`);
+    await loadScheduled();
+    if (document.querySelector('.skmw-pop')) renderCalendar();
+  }
+}
 function mountPop(pop) {
   document.body.appendChild(pop);
-  // Popup is viewport-centered via CSS (top/left/transform on .skmw-pop).
+  // Popup is viewport-centered via CSS (top/left/transform on .skmw-pop),
+  // draggable by the header — drag overrides centering and is remembered.
+  makeDraggable(pop, 'skmw_pos_pop');
   const onDocClick = (e) => {
     if (!pop.isConnected) return;
     if (pop.contains(e.target) || e.target.closest?.('.skmw-scheduled')) return;
@@ -1170,7 +1283,7 @@ function mountPop(pop) {
 function renderCalendar() {
   document.querySelector('.skmw-pop')?.remove();
   const pop = el(`<div class="skmw-pop">
-    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><button class="skmw-pop-x">✕</button></div>
+    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><span style="display:inline-flex;align-items:center;"><label class="skmw-ac" title="Auto-delete Sent posts older than 7 days"><input type="checkbox" id="skmw-ac">🧹</label><button class="skmw-pop-x">✕</button></span></div>
     <div class="skmw-tabs">
       <div class="skmw-tab" data-tab="upcoming">Upcoming</div>
       <div class="skmw-tab" data-tab="published">Sent</div>
@@ -1179,6 +1292,14 @@ function renderCalendar() {
     <div id="skmw-list"></div>
   </div>`);
   mountPop(pop);
+  const ac = pop.querySelector('#skmw-ac');
+  if (ac) {
+    chrome.storage.local.get(['skmw_autoclean'], (r) => { ac.checked = !!(r && r.skmw_autoclean); });
+    ac.addEventListener('change', () => {
+      chrome.storage.local.set({ skmw_autoclean: ac.checked });
+      if (ac.checked) autoCleanSent(true);
+    });
+  }
   pop.querySelectorAll('.skmw-tab').forEach((t) => t.addEventListener('click', () => {
     calState.tab = t.dataset.tab; renderCalendar();
   }));
@@ -1209,19 +1330,50 @@ function renderList() {
     const grp = p.community_slug
       ? `<div class="skmw-grp"><span class="skmw-grp-ic">${escapeHtml(p.community_slug.slice(0, 1))}</span><a href="${escapeHtml(p.community_url || ('https://www.skool.com/' + p.community_slug))}" target="_blank" rel="noopener" title="Open community">${escapeHtml(p.community_slug)}</a></div>`
       : '';
-    return `<div class="skmw-item" data-id="${p.id}">
-      <div class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} <span class="skmw-pill ${cls}">${label}</span> ${grp}</div>
+    const cd = st === 'pending' ? `<span class="skmw-cd" data-ts="${d.getTime()}"></span>` : '';
+    const x = (st === 'published' || st === 'failed') ? `<button class="skmw-x" data-id="${p.id}" title="Delete from list">✕</button>` : '';
+    const openUrl = st === 'published' ? ` data-url="${escapeHtml(p.published_url || p.community_url || '')}"` : '';
+    return `<div class="skmw-item" data-id="${p.id}"${openUrl}>
+      <div class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} <span class="skmw-pill ${cls}">${label}</span> ${cd} ${grp} ${x}</div>
       <div class="c">${(p.content || '').slice(0, 160) || '(empty)'}</div>
     </div>`;
   }).join('');
 
+  // Live countdown on every pending row
+  const tickCd = () => {
+    if (!list.isConnected) { clearInterval(list._cdTimer); return; }
+    list.querySelectorAll('.skmw-cd').forEach((n) => {
+      const ms = parseInt(n.dataset.ts, 10) - Date.now();
+      n.textContent = ms <= 0 ? '· due' : `· ${fmtCd(ms)}`;
+    });
+  };
+  clearInterval(list._cdTimer);
+  tickCd();
+  list._cdTimer = setInterval(tickCd, 20000);
+
   list.querySelectorAll('.skmw-item').forEach((node) => {
     node.addEventListener('click', (e) => {
-      if (e.target.closest('a')) return;
+      if (e.target.closest('a') || e.target.closest('.skmw-x')) return;
       const post = calState.posts.find((p) => String(p.id) === node.dataset.id);
-      if (post && (post.status || 'pending') === 'pending') {
-        renderEditForm(post, list);
+      if (!post) return;
+      const st = post.status || 'pending';
+      if (st === 'pending') { renderEditForm(post, list); return; }
+      if (st === 'published') {
+        const url = post.published_url || post.community_url;
+        if (url) window.open(url, '_blank', 'noopener');
       }
+    });
+  });
+  // ✕ deletes a Sent/Failed row straight from the list
+  list.querySelectorAll('.skmw-x').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        await apiRequest('/scheduled-posts', { method: 'DELETE', body: { id: parseInt(btn.dataset.id, 10) } });
+        btn.closest('.skmw-item')?.remove();
+        await loadScheduled();
+        updateBadge();
+      } catch (err) { toast('⚠️ ' + (err.message || 'delete failed')); }
     });
   });
 }

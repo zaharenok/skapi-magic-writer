@@ -6,7 +6,8 @@
   "description": "Magic post writer + scheduler for Skool — experimental, UI lives inside Skool (no popup). [TEST BUILD]",
   "permissions": [
     "storage",
-    "cookies"
+    "cookies",
+    "notifications"
   ],
   "host_permissions": [
     "https://*.skool.com/*",
