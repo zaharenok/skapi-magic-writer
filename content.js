@@ -173,24 +173,33 @@ function handleContextLost() {
   return true;
 }
 
-function getJwt() {
+function getJwt(retried) {
   // JWT is auto-extracted from the Skool auth_token HttpOnly cookie by the
   // service worker — the user never enters a token.
   return new Promise((resolve) => {
+    const finish = (token) => resolve(token || '');
+    let answered = false;
+    const transient = () => {
+      // MV3 service worker can be mid-restart ("Receiving end does not
+      // exist") — that is NOT a dead context. Reload only on a real
+      // "Extension context invalidated"; otherwise retry once quietly.
+      if (retried) { finish(''); return; }
+      setTimeout(() => { getJwt(true).then(finish); }, 400);
+    };
     try {
       chrome.runtime.sendMessage({ type: 'GET_JWT' }, (res) => {
-        if (chrome.runtime.lastError) {
-          handleContextLost();
-          resolve('');
-          return;
-        }
-        resolve(res?.token || '');
+        if (answered) return;
+        answered = true;
+        const err = chrome.runtime.lastError;
+        if (!err) { finish(res?.token || ''); return; }
+        if (/context invalidated/i.test(err.message || '')) { handleContextLost(); finish(''); return; }
+        transient();
       });
     } catch (e) {
       // Chrome throws synchronously here when the extension was reloaded or
       // updated — the callback never fires and lastError is never set.
-      handleContextLost();
-      resolve('');
+      if (/context invalidated/i.test(e?.message || '')) { handleContextLost(); finish(''); return; }
+      transient();
     }
   });
 }
@@ -889,11 +898,13 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // the save handler reuses this snapshot instead of re-querying the DOM.
   const composerGif = isEdit ? null : findComposerGif();
 
+  const hasComposerMedia = !!(findEditor() && findEditor().querySelector('img, video'));
+  const gifSavedNote = composerGif || lastGifTerm;
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
-    ${!isEdit ? (composerGif ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF from Skool\'s GIF picker is saved. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>') : ''}
+    ${!isEdit ? (gifSavedNote ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : (hasComposerMedia ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF picked via the 🎬 GIF flow is carried over. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>' : '')) : ''}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         ${isEdit
@@ -920,6 +931,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   `);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+  makeDraggable(modal, 'skmw_pos_sched', '.skmw-modal');
   let postCreated = false;
   const close = (success = false) => {
     overlay.remove();
@@ -1204,7 +1216,7 @@ function makeDraggable(pop, storageKey, headerSel = '.skmw-pop-h') {
     y: Math.max(8, Math.min(y, window.innerHeight - 48)),
   });
   h.addEventListener('mousedown', (e) => {
-    if (e.target.closest('button, input, a, label')) return;
+    if (e.target.closest('button, input, textarea, select, a, label, .skmw-preview, .skmw-cal-grid, .skmw-presets')) return;
     e.preventDefault();
     const r = pop.getBoundingClientRect();
     const dx = e.clientX - r.left;
