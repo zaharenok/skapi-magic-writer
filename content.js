@@ -440,7 +440,8 @@ function injectStyles() {
     .skmw-pop.editing{width:680px;}
     .skmw-pop label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
     .skmw-pop textarea{width:100%;box-sizing:border-box;min-height:150px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;resize:vertical;}
-    .skmw-pop textarea:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:${BRAND};}
+    .skmw-pop textarea:focus,.skmw-pop input[type=text]:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:${BRAND};}
+    .skmw-pop input[type=text]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;}
     .skmw-pop .skmw-dt{width:100%;box-sizing:border-box;margin-top:2px;}
     .skmw-pop .skmw-edit-header{margin-bottom:4px;}
     .skmw-pop .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
@@ -897,6 +898,22 @@ async function openScheduleDialog(post = null, prefillText = null) {
   else if (prefillText) content = prefillText;
   else { const ed = findEditor(); content = editorText(ed); }
 
+  // Title: first-class column now; legacy rows kept it as content's first
+  // line (≤120 chars) — extract it so it edits separately and publishes
+  // via the title column. Create mode captures the composer's title input.
+  let schedTitle = '';
+  if (isEdit) {
+    schedTitle = (post.title || '').trim();
+    if (!schedTitle && content.includes('\n')) {
+      const firstLine = content.split('\n', 1)[0].trim();
+      if (firstLine && firstLine.length <= 120) {
+        schedTitle = firstLine;
+        content = content.split('\n').slice(1).join('\n').trim();
+      }
+    }
+  } else {
+    schedTitle = (findTitleInput()?.value || '').trim();
+  }
   // Default: tomorrow 09:00 for new posts (a sensible posting slot)
   let chosen = post ? new Date(post.scheduled_for) : atDayOffset(1, 9, 0);
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
@@ -924,8 +941,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         ${isEdit
-          ? `<label>Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
-          : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div>`}
+          ? `<label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title"><label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>`
+          : `<label>Posting</label><div class="skmw-preview" id="skmw-s-preview">${previewHtml}</div><label style="margin-top:14px;">Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">`}
         <label style="margin-top:14px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
@@ -1039,6 +1056,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
     if (!isNaN(v.getTime())) chosen = v;
     const finalContent = isEdit ? document.getElementById('skmw-s-content').value.trim() : content.trim();
     if (!finalContent) return showErr('Post content is empty.');
+    const titleVal = document.getElementById('skmw-s-title').value.trim();
+    if (!titleVal) return showErr('Post title is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
     const btn = document.getElementById('skmw-s-save');
     btn.disabled = true; btn.textContent = '⏳ Saving...';
@@ -1059,7 +1078,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
       const gifSearch = gifUrl
         ? gifTermFrom(finalContent)
         : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (isEdit && post?.id) {
         // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
         const { language: _langOmitted, ...putBody } = body;
@@ -1444,6 +1463,16 @@ function renderList() {
 // ---------------------------------------------------------------------------
 function renderEditForm(post, container) {
   const content = post.content || '';
+  // Title: stored column first; legacy rows kept it as content's first line.
+  let title = (post.title || '').trim();
+  let bodyContent = content;
+  if (!title && content.includes('\n')) {
+    const firstLine = content.split('\n', 1)[0].trim();
+    if (firstLine && firstLine.length <= 120) {
+      title = firstLine;
+      bodyContent = content.split('\n').slice(1).join('\n').trim();
+    }
+  }
   let chosen = new Date(post.scheduled_for);
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
   const gifOn = !!post.gif_search;
@@ -1455,8 +1484,10 @@ function renderEditForm(post, container) {
       <button class="skmw-btn-back" id="skmw-edit-back">← Back to list</button>
       <h3>✏️ Edit scheduled post</h3>
     </div>
-    <label>Post content</label>
-    <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
+    <label>Title</label>
+    <input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title">
+    <label style="margin-top:14px;">Post content</label>
+    <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<div style="font-size:12px;${hasGif ? 'color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;' : 'color:#6b7280;background:#F9FAFB;border:1.5px solid #e5e7eb;'}border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${hasGif ? '✓ ' + gifDesc(post.media_url, post.gif_search) : '✗ none'}</div>`; })()}
     <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
@@ -1498,6 +1529,8 @@ function renderEditForm(post, container) {
     if (!isNaN(v.getTime())) chosen = v;
     const finalContent = document.getElementById('skmw-e-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
+    const titleVal = document.getElementById('skmw-e-title').value.trim();
+    if (!titleVal) return showErr('Post title is empty.');
     if (chosen.getTime() < Date.now()) return showErr('Pick a time in the future.');
     const btn = document.getElementById('skmw-e-save');
     btn.disabled = true; btn.textContent = '⏳ Saving...';
@@ -1507,7 +1540,7 @@ function renderEditForm(post, container) {
       // provided" (update skips None), so sending null would NOT wipe it —
       // but it also would never re-arm the publisher's GIF fallback for an
       // edited post. Resend the stored term so the GIF still gets attached.
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
