@@ -446,7 +446,10 @@ function injectStyles() {
     .skmw-pop .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
     .skmw-pop .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
     .skmw-pop.editing{width:520px;}
-    .skmw-tabs{display:flex;gap:4px;padding:8px 10px 0;}
+    .skmw-pop .skmw-ac{display:inline-flex;margin:0;}
+    .skmw-pop.editing #skmw-list{padding:8px 14px 14px;}
+    .skmw-pop.editing textarea{min-height:280px;}
+    .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
     .skmw-tab.active{background:${BRAND};border-color:${INK};}
     .skmw-item{padding:10px 14px;border-bottom:1px solid #f3f4f6;cursor:pointer;}
@@ -1455,11 +1458,9 @@ function renderEditForm(post, container) {
     <label>Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
     ${(post.media_url || post.gif_search) ? `<div style="font-size:12px;color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${gifDesc(post.media_url, post.gif_search)}</div>` : ''}
+    <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
-    <div class="skmw-cal-grid" id="skmw-e-cal"></div>
-    </div>
-    </div>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -1480,13 +1481,6 @@ function renderEditForm(post, container) {
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
 
-  function renderCalendar() {
-    renderMiniCalendar(document.getElementById('skmw-e-cal'), chosen, (d) => {
-      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0);
-      chosen = d; syncFromChosen(); renderCalendar();
-    });
-  }
-  renderCalendar();
   syncFromChosen();
 
   document.getElementById('skmw-edit-back').addEventListener('click', () => {

@@ -61,7 +61,7 @@
   .skmw-failed{background:#FEE2E2;color:#991B1B;}
   .skmw-grp{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;max-width:45%;}
   .skmw-grp-ic{width:18px;height:18px;border-radius:50%;background:#FF90E8;color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0;}
-  .skmw-grp a{color:#7c3aed;text-decoration:none;font-weight:600;}
+  .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
   .skmw-grp a:hover{text-decoration:underline;}
   .skmw-cd{font-weight:700;color:#7c3aed;white-space:nowrap;}
   .skmw-x{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px;float:right;}
@@ -72,6 +72,9 @@
   .skmw-empty .skmw-btn{margin-top:14px;}
   .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0A0A0A;color:#fff;padding:12px 22px;border-radius:12px;border:2px solid #0A0A0A;font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
   .skmw-pop.editing{width:520px;}
+  .skmw-pop .skmw-ac{display:inline-flex;margin:0;}
+  .skmw-pop.editing #skmw-list{padding:8px 14px 14px;}
+  .skmw-pop.editing textarea{min-height:280px;}
   .skmw-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
   .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
   .skmw-preset:hover{border-color:#FF90E8;color:#0A0A0A;}
@@ -286,7 +289,6 @@ function renderEditForm(post, container) {
     <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
-    <div class="skmw-cal-grid" id="skmw-e-cal"></div>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -305,13 +307,6 @@ function renderEditForm(post, container) {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
-  function renderCal() {
-    renderMiniCalendar(document.getElementById('skmw-e-cal'), chosen, (d) => {
-      d.setHours(chosen.getHours(), chosen.getMinutes(), 0, 0);
-      chosen = d; syncFromChosen(); renderCal();
-    });
-  }
-  renderCal();
   syncFromChosen();
 
   document.getElementById('skmw-edit-back').addEventListener('click', () => renderList());
