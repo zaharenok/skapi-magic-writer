@@ -423,6 +423,8 @@ function openScheduleMock() {
     { label: '📆 Tomorrow 12:00', at: () => atDayOffset(1, 12, 0) },
     { label: '🌙 Tomorrow 18:00', at: () => atDayOffset(1, 18, 0) },
     { label: '➕ In 1 week', at: () => new Date(Date.now() + 7 * 24 * 3600 * 1000) },
+    { label: '🌆 Today 21:00', at: () => atToday(21, 0) },
+    { label: '📅 Monday 9:00', at: () => { const d = new Date(); d.setDate(d.getDate() + (((8 - d.getDay()) % 7) || 7)); d.setHours(9, 0, 0, 0); return d; } },
   ];
   const $presets = document.getElementById('skmw-s-presets');
   presets.forEach((p) => {
