@@ -11,20 +11,35 @@ const BRAND = '#FF90E8';
 const INK = '#0A0A0A';
 // ---------------------------------------------------------------------------
 function clearComposer() {
-  // Empty the composer so Skool doesn't show "You haven't finished your
-  // post yet" when it closes. Clearing the title via the native setter and
-  // the editor via selectAll+delete goes through React/ProseMirror events.
+  // Empty the composer so Skool's "You haven't finished your post yet"
+  // dialog never triggers on close. ProseMirror syncs its state from real
+  // input events (DOMObserver re-parses DOM mutations, prosemirror-view
+  // domchange.ts), so every pass must go through execCommand — never a
+  // bare DOM write without a follow-up input event.
   const titleInput = findTitleInput();
-  if (titleInput) setInput(titleInput, '');
+  if (titleInput && titleInput.value) setInput(titleInput, '');
   const editor = findEditor();
-  if (editor) {
+  if (!editor) { console.warn('[skmw] clearComposer: editor not found'); return; }
+  editor.focus();
+  document.execCommand('selectAll', false, null);
+  document.execCommand('delete', false, null);
+  for (let attempt = 0; attempt < 3 && editor.textContent.trim(); attempt++) {
     try {
-      editor.focus();
-      document.execCommand('selectAll');
+      const sel = window.getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(editor);
+      sel.removeAllRanges();
+      sel.addRange(range);
       document.execCommand('delete');
     } catch (e) { /* ignore */ }
-    if (editor.textContent) editor.textContent = '';
   }
+  // Last resort: wipe the DOM, then fire an input event so ProseMirror's
+  // observer re-parses the emptied editor into a transaction.
+  if (editor.textContent.trim()) {
+    editor.textContent = '';
+    editor.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  }
+  console.log(`[skmw] clearComposer: title=${!titleInput ? 'not found' : titleInput.value ? 'NOT cleared' : 'cleared'} editor=${editor.textContent.trim() ? 'NOT cleared' : 'cleared'}`);
 }
 
 async function closeComposer() {
@@ -45,6 +60,14 @@ async function closeComposer() {
       || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
     if (cancelBtn) {
       cancelBtn.click();
+    } else {
+      // No visible Cancel — try Escape. The modal poll below auto-accepts
+      // Skool's confirmation dialog in both cases.
+      document.activeElement?.blur();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true }));
+      console.log('[skmw] No Cancel button — sent Escape, polling for confirm dialog');
+    }
+    {
 
       // Find Skool's confirmation modal. Look for role="dialog"/"alertdialog",
       // classes like modal/dialog/confirm (case-insensitive), or fixed-position
@@ -56,6 +79,8 @@ async function closeComposer() {
           ...document.querySelectorAll('[class*="modal" i]'),
           ...document.querySelectorAll('[class*="dialog" i]'),
           ...document.querySelectorAll('[class*="confirm" i]'),
+          ...document.querySelectorAll('[aria-modal="true"]'),
+          ...document.querySelectorAll('[class*="overlay" i]'),
         ];
         // Also check for fixed-position overlays that look like modals.
         // Require an inner button — a plain dropdown menu ("Cancel" item)
@@ -79,46 +104,22 @@ async function closeComposer() {
         return candidates;
       };
 
-      // Classify buttons INSIDE the modal only. Two modal styles exist:
-      //  (1) "Leave without finishing?"  -> buttons [Cancel, Leave] where
-      //      Leave is the accept (Cancel = stay).
-      //  (2) "Cancel this post?" / "Discard post?" -> buttons [Keep editing,
-      //      Cancel] where Cancel IS the accept.
-      // Strategy: prefer explicit accept words (leave, discard, delete, exit)
-      // first; only fall back to 'cancel' as accept when no explicit accept
-      // button exists. 'keep editing', 'stay', 'go back' are always deny.
-      const MODAL_EXPLICIT_ACCEPT = /leave|discard|yes|confirm|delete|exit|quit|abandon|continue without saving/i;
-      const MODAL_FALLBACK_ACCEPT = /cancel|discard/i;
-      const MODAL_DENY_PATTERNS = /stay|keep editing|keep|go back|never mind|resume|back to|continue editing|dont leave|don't leave|dont cancel|don't cancel/i;
-
-      const isDeny = (text) => MODAL_DENY_PATTERNS.test(text);
-
+      // Classification strategy lives in skmwFindAccept (shared with the
+      // global discard watcher): explicit accept words first, 'cancel' only
+      // beside an explicit deny, deepest matching label clicked.
       const findAcceptButton = (modals) => {
         for (const modal of modals) {
-          const buttons = [...modal.querySelectorAll('button, [role="button"]')];
-          // Pass 1: explicit accept words only
-          const explicit = buttons.find((b) => {
-            const text = (b.textContent || '').trim().toLowerCase();
-            if (!text || text.length > 40 || isDeny(text)) return false;
-            return MODAL_EXPLICIT_ACCEPT.test(text);
-          });
-          if (explicit) return explicit;
-          // Pass 2: 'cancel'/'discard' as accept (modal style 2)
-          const fallback = buttons.find((b) => {
-            const text = (b.textContent || '').trim().toLowerCase();
-            if (!text || text.length > 40 || isDeny(text)) return false;
-            return MODAL_FALLBACK_ACCEPT.test(text);
-          });
-          if (fallback) return fallback;
+          const btn = skmwFindAccept(modal);
+          if (btn) return btn;
         }
         return null;
       };
 
-      // Poll for modal for up to ~4s (16 iterations × 250ms). Skool mounts
+      // Poll for modal for up to ~7.5s (25 iterations × 300ms). Skool mounts
       // the modal async, so we retry before falling back.
       let accepted = null;
       let foundModal = null;
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 25; i++) {
         foundModal = findModal();
         if (foundModal.length) {
           const btn = findAcceptButton(foundModal);
@@ -134,11 +135,9 @@ async function closeComposer() {
       if (accepted) {
         console.log('[skmw] Auto-accepted Skool confirmation modal:', accepted);
       } else if (foundModal && foundModal.length) {
-        // Modal found but no accept button — log diagnostics
-        const texts = [...foundModal[0].querySelectorAll('button, [role="button"]')]
-          .map((b) => JSON.stringify((b.textContent || '').trim().slice(0, 30)))
-          .filter(Boolean);
-        console.warn('[skmw] Confirmation modal found but no accept button. Buttons:', texts);
+        // Modal found but no accept button — dump DOM so the extension
+        // Errors page carries enough to fix the matcher later.
+        console.warn('[skmw] Confirmation modal found but no accept button. HTML:', foundModal[0].outerHTML.slice(0, 1200));
       } else {
         console.log('[skmw] No confirmation modal detected — composer closed cleanly');
       }
@@ -147,11 +146,6 @@ async function closeComposer() {
   } finally {
     window.confirm = originalConfirm;
   }
-  // Fallback: send Escape key
-  document.activeElement?.blur();
-  const escEvent = new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true });
-  document.dispatchEvent(escEvent);
-  console.log('[skmw] Sent Escape key to close composer (fallback)');
   return true;
 }
 // ---------------------------------------------------------------------------
@@ -161,6 +155,7 @@ async function closeComposer() {
 // open). Every chrome.* call then throws "Extension context invalidated"
 // synchronously — we must stop retrying, reload the tab once, then warn.
 let _contextLost = false;
+let lastGifTerm = null; // search term of the GIF the extension itself inserted this session
 function handleContextLost() {
   if (_contextLost) return true;
   _contextLost = true;
@@ -250,17 +245,6 @@ function findComposerAnchor() {
   // Stable Skool anchors — "Go Live" appears/disappears, "Write something" is constant
   return findText('Go Live') || findText('Write something');
 }
-function findHeader() {
-  const search = document.querySelector('input[placeholder="Search"]');
-  if (search) {
-    let node = search;
-    for (let i = 0; i < 10 && node; i++) {
-      node = node.parentElement;
-      if (node && node.querySelectorAll('button').length >= 2 && node.children.length <= 6) return node;
-    }
-  }
-  return document.querySelector('header, [class*="Header"], [class*="TopBar"]');
-}
 function findEditor() {
   const sels = ['div[contenteditable="true"].tiptap', 'div[contenteditable="true"].ProseMirror', 'div[contenteditable="true"]', 'textarea[name="content"]'];
   for (const s of sels) {
@@ -269,8 +253,21 @@ function findEditor() {
   }
   return null;
 }
+// Block-preserving text extraction. textContent on a ProseMirror editor
+// concatenates <p> blocks with NO separator — that glued every scheduled
+// post into a wall of text. innerText (Chrome-only, and this extension is
+// Chrome-only) inserts \n at block boundaries and keeps the blank lines
+// produced by the empty <p> between paragraphs.
+function editorText(editor) {
+  if (!editor) return '';
+  const raw = (editor.innerText || editor.textContent || '').replace(/\u00a0/g, ' ');
+  return raw.replace(/\n{3,}/g, '\n\n').trim();
+}
 function findTitleInput() {
-  return document.querySelector('input[placeholder="Title"]');
+  return (
+    document.querySelector('input[placeholder="Title"]') ||
+    document.querySelector('input[placeholder*="title" i]')
+  );
 }
 function setInput(input, value) {
   const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -293,6 +290,99 @@ async function typeInto(editor, text) {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// ---- Skool discard-confirmation dialogs ("You haven't finished your post
+// yet...") — shared patterns for closeComposer and the global watcher ----
+const SKMW_MODAL_ACCEPT = /leave|discard|yes|confirm|delete|exit|quit|abandon|continue without saving|without finishing|close anyway/i;
+const SKMW_MODAL_FALLBACK = /cancel|discard/i;
+const SKMW_MODAL_DENY = /stay|keep editing|keep|go back|never mind|resume|back to|continue editing|dont leave|don't leave|dont cancel|don't cancel/i;
+const SKMW_DISCARD_TEXT = /haven'?t finished|leave without finishing|discard your (post|draft)/i;
+// Fixed-position elements have offsetParent null — use rects for visibility.
+function skmwVisible(n) {
+  const r = n.getBoundingClientRect ? n.getBoundingClientRect() : null;
+  return !!r && r.width > 0 && r.height > 0;
+}
+// Find the dialog's accept (leave/discard) element. Scanned DEEPEST-first:
+// an ancestor holds BOTH buttons' texts ("Discard postKeep editing"), so an
+// outer-first scan would match the whole dialog container and click it.
+// New Skool DOM may keep action labels on non-button elements, so any
+// element qualifies — clicking the label bubbles to the real control.
+// 'cancel'-family is accepted only when an explicit deny ("Keep editing")
+// sits next to it: in a [Cancel][Leave] modal Cancel means STAY.
+function skmwFindAccept(scope) {
+  const nodes = [...scope.querySelectorAll('*')].filter(skmwVisible).reverse();
+  const label = (n) => (n.textContent || '').trim();
+  const hasDeny = nodes.some((n) => { const t = label(n); return t && t.length <= 40 && SKMW_MODAL_DENY.test(t); });
+  for (const pattern of [SKMW_MODAL_ACCEPT, SKMW_MODAL_FALLBACK]) {
+    const hit = nodes.find((n) => {
+      const t = label(n);
+      if (!t || t.length > 40 || SKMW_MODAL_DENY.test(t)) return false;
+      if (pattern === SKMW_MODAL_FALLBACK && !hasDeny) return false;
+      return pattern.test(t);
+    });
+    if (hit) return hit.closest('button, [role="button"], a') || hit;
+  }
+  return null;
+}
+
+// Global watcher: whenever Skool shows a "you haven't finished your post"
+// confirmation (any code path — scheduled close, manual close, navigation),
+// auto-click the accept (leave/discard) button so the dialog never blocks.
+let _discardWatcherOn = false;
+function startDiscardWatcher() {
+  if (_discardWatcherOn) return;
+  _discardWatcherOn = true;
+  let scheduled = false;
+  let lastScan = 0;
+  const check = () => {
+    const wait = 250 - (Date.now() - lastScan);
+    if (wait > 0) {
+      // A mutation arrived inside the throttle window. Re-arm the check
+      // instead of dropping it — a mounted dialog is static (no further
+      // mutations), so a dropped check left the modal on screen forever.
+      scheduled = true;
+      setTimeout(() => { scheduled = false; check(); }, wait);
+      return;
+    }
+    lastScan = Date.now();
+    // Cheap selectors first. Skool styles modals with styled-components
+    // (hashed class names), so also deep-scan fixed-position overlays that
+    // contain a button and the discard text.
+    let modals = [
+      ...document.querySelectorAll(
+        '[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'
+      ),
+    ].filter((m) => SKMW_DISCARD_TEXT.test(m.textContent || ''));
+    if (!modals.length) {
+      for (const div of document.querySelectorAll('div')) {
+        if (!div.querySelector('button, [role="button"]')) continue;
+        const st = window.getComputedStyle(div);
+        if (st.position !== 'fixed' || !(parseInt(st.zIndex, 10) > 50)) continue;
+        if (SKMW_DISCARD_TEXT.test(div.textContent || '')) modals.push(div);
+      }
+    }
+    if (!modals.length) return;
+    for (const modal of modals) {
+      const btn = skmwFindAccept(modal);
+      if (btn) {
+        const label = (btn.textContent || '').trim();
+        btn.click();
+        console.log('[skmw] Discard watcher auto-accepted:', label);
+        toast('🗑 Draft discarded');
+      } else {
+        console.warn('[skmw] Discard modal, no accept button. HTML:', modal.outerHTML.slice(0, 1200));
+      }
+    }
+  };
+  const obs = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    // setTimeout, not requestAnimationFrame — rAF never fires in background
+    // tabs, which is exactly where scheduled closes happen.
+    setTimeout(() => { scheduled = false; check(); }, 120);
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+}
+
 function toast(msg) {
   const t = el(`<div class="skmw-toast">${escapeHtml(msg)}</div>`);
   document.body.appendChild(t);
@@ -308,10 +398,9 @@ function injectStyles() {
     .skmw-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:${BRAND};color:${INK};border:2px solid ${INK};border-radius:10px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-left:8px;line-height:1;transition:transform .12s,box-shadow .12s;}
     .skmw-btn:hover{transform:translateY(-1px);box-shadow:0 3px 0 rgba(0,0,0,.12);}
     .skmw-btn:active{transform:translateY(1px);}
-    .skmw-cal{display:inline-flex;align-items:center;justify-content:center;position:relative;width:34px;height:34px;margin-left:6px;border-radius:10px;cursor:pointer;font-size:18px;border:2px solid transparent;}
-    .skmw-cal:hover{background:rgba(0,0,0,.05);}
-    .skmw-cal .b{position:absolute;top:-4px;right:-4px;background:${BRAND};color:${INK};font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;border-radius:8px;border:1.5px solid ${INK};display:flex;align-items:center;justify-content:center;}
-    .skmw-cal .b.zero{display:none;}
+    .skmw-scheduled{position:relative;}
+    .skmw-scheduled .b{position:absolute;top:-6px;right:-6px;background:${INK};color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;border-radius:8px;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;}
+    .skmw-scheduled .b.zero{display:none;}
     .skmw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;}
     .skmw-modal{background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:16px;box-shadow:6px 6px 0 rgba(0,0,0,.15);width:100%;max-width:560px;padding:22px;font-family:ui-sans-serif,system-ui,sans-serif;}
     .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;}
@@ -332,10 +421,21 @@ function injectStyles() {
     @keyframes skmw-progress-anim{0%{background-position:100% 0;}100%{background-position:0 0;}}
     .skmw-loading-text{font-size:13px;color:#6b7280;margin:0;font-weight:500;}
     .skmw-res{display:none;margin-top:14px;}
-    .skmw-pop{position:fixed;top:62px;right:16px;width:340px;max-height:70vh;overflow:auto;background:#fff;border:2px solid ${INK};border-radius:14px;box-shadow:6px 6px 0 rgba(0,0,0,.12);z-index:2147482999;font-family:ui-sans-serif,system-ui,sans-serif;}
+    .skmw-pop{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:520px;max-width:92vw;max-height:80vh;overflow:auto;background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:14px;box-shadow:6px 6px 0 rgba(0,0,0,.12);z-index:2147482999;font-family:ui-sans-serif,system-ui,sans-serif;}
     .skmw-pop-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1.5px solid #f3f4f6;position:sticky;top:0;background:#fff;}
     .skmw-pop-h h3{margin:0;font-size:15px;}
     .skmw-pop-x{background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280;}
+    /* Edit form inside the popup: widen + proper form styling (the generic
+       form CSS is scoped to .skmw-modal, which the popup is not). */
+    .skmw-pop.editing{width:680px;}
+    .skmw-pop label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
+    .skmw-pop textarea{width:100%;box-sizing:border-box;min-height:150px;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;resize:vertical;}
+    .skmw-pop textarea:focus,.skmw-pop .skmw-dt:focus{outline:none;border-color:${BRAND};}
+    .skmw-pop .skmw-dt{width:100%;box-sizing:border-box;margin-top:2px;}
+    .skmw-pop .skmw-edit-header{margin-bottom:4px;}
+    .skmw-pop .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
+    .skmw-pop .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
+    .skmw-pop .skmw-btn{white-space:nowrap;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 0;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
     .skmw-tab.active{background:${BRAND};border-color:${INK};}
@@ -347,6 +447,11 @@ function injectStyles() {
     .skmw-pending{background:#FEF3C7;color:#92400E;}
     .skmw-published{background:#DCFCE7;color:#166534;}
     .skmw-failed{background:#FEE2E2;color:#991B1B;}
+    .skmw-grp{display:inline-flex;align-items:center;gap:5px;flex-shrink:0;max-width:45%;}
+    .skmw-grp-ic{width:18px;height:18px;border-radius:50%;background:${BRAND};color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0;}
+    .skmw-grp a{color:#7c3aed;text-decoration:none;font-weight:600;}
+    .skmw-grp a:hover{text-decoration:underline;}
+    .skmw-up-item .t{white-space:nowrap;}
     .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
     .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${INK};color:#fff;padding:12px 22px;border-radius:12px;border:2px solid ${INK};font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
     /* Compact Schedule button that fits inside Skool's composer button row */
@@ -415,7 +520,7 @@ function injectButtons() {
     magic.addEventListener('click', (e) => { e.stopPropagation(); openMagicDialog(); });
     anchor.parentNode.insertBefore(magic, anchor.nextSibling);
     
-    const scheduled = el(`<button class="skmw-btn skmw-scheduled" style="margin-left:8px;">📅 Scheduled</button>`);
+    const scheduled = el(`<button class="skmw-btn skmw-scheduled" style="margin-left:8px;">📅 Scheduled<span class="b zero">0</span></button>`);
     scheduled.addEventListener('click', (e) => { e.stopPropagation(); toggleCalendar(); });
     anchor.parentNode.insertBefore(scheduled, magic.nextSibling);
   }
@@ -444,7 +549,7 @@ function injectScheduleInComposer() {
     // Save composer text to localStorage in case user cancels
     const editor = findEditor();
     const titleInput = findTitleInput();
-    const body = editor ? editor.textContent.trim() : '';
+    const body = editorText(editor);
     const title = titleInput ? titleInput.value.trim() : '';
     const fullText = (title ? title + '\n\n' : '') + body;
     
@@ -458,14 +563,6 @@ function injectScheduleInComposer() {
   // Insert right after Cancel: [Cancel] [📅 Schedule] [Post wrapper]
   actionRow.insertBefore(btn, cancelBtn.nextSibling);
 }
-function injectCalendarIcon() {
-  const header = findHeader();
-  if (!header || header.querySelector('.skmw-cal')) return;
-  const icon = el(`<div class="skmw-cal" title="Scheduled posts">📅<span class="b zero">0</span></div>`);
-  icon.addEventListener('click', (e) => { e.stopPropagation(); toggleCalendar(); });
-  header.appendChild(icon);
-}
-
 // ---------------------------------------------------------------------------
 // MAGIC POST DIALOG
 // ---------------------------------------------------------------------------
@@ -694,6 +791,7 @@ async function insertGif(searchQuery) {
     if (!items.length) { console.warn('[skmw] No GIF results for', searchQuery); return false; }
     items[Math.floor(Math.random() * items.length)].click();
     await sleep(1200);
+    lastGifTerm = searchQuery;
     const backdrop = document.querySelector('[class*="DropdownBackground"]');
     if (backdrop) backdrop.click();
     return true;
@@ -716,7 +814,13 @@ async function insertIntoComposer(text, attachGif = false) {
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   const hasTitle = lines.length > 1;
   const title = hasTitle ? lines[0] : '';
-  const body = hasTitle ? lines.slice(1).join('\n\n') : text;
+  // Paragraphs keep a blank line between them, but consecutive list items
+  // (bullets / numbers) join with a single line break — otherwise every item
+  // renders with a paragraph gap and the list looks broken up.
+  const isListItem = (l) => /^(?:[•·▪‣]|[-*+]\s|\d+[.)]\s)/.test(l);
+  const joinBody = (arr) => arr.reduce((acc, l, i) =>
+    i === 0 ? l : acc + (isListItem(l) && isListItem(arr[i - 1]) ? '\n' : '\n\n') + l, '');
+  const body = hasTitle ? joinBody(lines.slice(1)) : text;
 
   if (title) {
     const titleInput = findTitleInput();
@@ -743,7 +847,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   let content = '';
   if (isEdit) content = post.content || '';
   else if (prefillText) content = prefillText;
-  else { const ed = findEditor(); content = ed ? ed.textContent.trim() : ''; }
+  else { const ed = findEditor(); content = editorText(ed); }
 
   // Default: tomorrow 09:00 for new posts (a sensible posting slot)
   let chosen = post ? new Date(post.scheduled_for) : atDayOffset(1, 9, 0);
@@ -881,7 +985,17 @@ async function openScheduleDialog(post = null, prefillText = null) {
       // by the time this runs) or the URL saved on the post when editing.
       // The search term is stored only as the publisher's fallback.
       const gifUrl = isEdit ? (post?.media_url || null) : composerGif;
-      const gifSearch = gifUrl ? gifTermFrom(finalContent) : null;
+      const ed = findEditor();
+      // Loose presence check is safe: lastGifTerm is only set by OUR successful
+      // insertGif, so any img/video in the composer right after attaching a GIF
+      // means the user's GIF is there. Skool rehosts GIFs (webp/mp4/CDN URLs),
+      // so sniffing .gif srcs misses most of them. Worst case: the publisher's
+      // search fallback attaches a search-GIF — strictly better than no GIF.
+      const gifNodePresent = !!(ed && ed.querySelector('img, video'));
+      const gifPresent = !!gifUrl || (!isEdit && !!lastGifTerm && gifNodePresent);
+      const gifSearch = gifUrl
+        ? gifTermFrom(finalContent)
+        : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
       const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
@@ -920,15 +1034,22 @@ function gifTermFrom(text) {
 }
 // Find the GIF currently inserted in the Skool composer, if any. Returns the
 // image URL so the scheduled publisher can re-attach the exact same GIF.
+// New Skool may render the picked GIF as <img> re-hosted on assets.skool.com
+// or as <video> — match .gif sources in both.
 function findComposerGif() {
   const editor = findEditor();
   if (!editor) return null;
-  const imgs = editor.querySelectorAll('img');
-  for (const img of imgs) {
-    const src = ((img.currentSrc || img.src) || '').toLowerCase();
-    if (src.includes('giphy') || src.includes('tenor') || src.includes('gif')) {
-      return img.currentSrc || img.src;
-    }
+  const isGifSrc = (s) => {
+    s = (s || '').toLowerCase();
+    return s.includes('giphy') || s.includes('tenor') || s.includes('.gif');
+  };
+  for (const img of editor.querySelectorAll('img')) {
+    const src = img.currentSrc || img.src || '';
+    if (isGifSrc(src)) return src;
+  }
+  for (const v of editor.querySelectorAll('video')) {
+    const src = v.currentSrc || v.src || v.poster || '';
+    if (isGifSrc(src)) return src;
   }
   return null;
 }
@@ -963,8 +1084,11 @@ function renderUpcoming(container, closeDialog) {
   if (!pending.length) { container.innerHTML += '<div style="font-size:12px;color:#9ca3af;padding:4px 8px;">None yet.</div>'; return; }
   pending.slice(0, 6).forEach((p) => {
     const d = new Date(p.scheduled_for);
-    const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span><span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
-    item.addEventListener('click', () => { closeDialog(true); setTimeout(() => openScheduleDialog(p), 50); });
+    const grp = p.community_slug
+      ? `<div class="skmw-grp"><span class="skmw-grp-ic">${escapeHtml(p.community_slug.slice(0, 1))}</span><a href="${escapeHtml(p.community_url || ('https://www.skool.com/' + p.community_slug))}" target="_blank" rel="noopener" title="Open community">${escapeHtml(p.community_slug)}</a></div>`
+      : '';
+    const item = el(`<div class="skmw-up-item"><span class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>${grp}<span class="c">${escapeHtml((p.content || '').slice(0, 60))}</span></div>`);
+    item.addEventListener('click', (e) => { if (e.target.closest('a')) return; closeDialog(true); setTimeout(() => openScheduleDialog(p), 50); });
     container.appendChild(item);
   });
 }
@@ -987,7 +1111,7 @@ async function loadScheduled() {
   updateBadge();
 }
 function updateBadge() {
-  const badge = document.querySelector('.skmw-cal .b');
+  const badge = document.querySelector('.skmw-scheduled .b');
   if (!badge) return;
   const n = calState.posts.filter((p) => (p.status || 'pending') === 'pending').length;
   badge.textContent = n > 99 ? '99+' : n;
@@ -1003,6 +1127,22 @@ function refreshCalendar() {
     if (document.querySelector('.skmw-pop')) renderCalendar();
   });
 }
+function mountPop(pop) {
+  document.body.appendChild(pop);
+  // Popup is viewport-centered via CSS (top/left/transform on .skmw-pop).
+  const onDocClick = (e) => {
+    if (!pop.isConnected) return;
+    if (pop.contains(e.target) || e.target.closest?.('.skmw-scheduled')) return;
+    close();
+  };
+  const close = () => {
+    pop.remove();
+    document.removeEventListener('mousedown', onDocClick, true);
+  };
+  pop.querySelector('.skmw-pop-x')?.addEventListener('click', (e) => { e.stopPropagation(); close(); });
+  // Click-outside closes; capture phase so Skool's handlers can't swallow it.
+  document.addEventListener('mousedown', onDocClick, true);
+}
 function renderCalendar() {
   document.querySelector('.skmw-pop')?.remove();
   const pop = el(`<div class="skmw-pop">
@@ -1014,8 +1154,7 @@ function renderCalendar() {
     </div>
     <div id="skmw-list"></div>
   </div>`);
-  document.body.appendChild(pop);
-  pop.querySelector('.skmw-pop-x').addEventListener('click', () => pop.remove());
+  mountPop(pop);
   pop.querySelectorAll('.skmw-tab').forEach((t) => t.addEventListener('click', () => {
     calState.tab = t.dataset.tab; renderCalendar();
   }));
@@ -1025,6 +1164,7 @@ function renderCalendar() {
 function renderList() {
   const list = document.getElementById('skmw-list');
   if (!list) return;
+  document.querySelector('.skmw-pop')?.classList.remove('editing');
   const now = Date.now();
   const byTab = (p) => {
     const st = p.status || 'pending';
@@ -1042,14 +1182,18 @@ function renderList() {
     const st = p.status || 'pending';
     const cls = st === 'published' ? 'skmw-published' : st === 'failed' ? 'skmw-failed' : (d.getTime() < now ? 'skmw-failed' : 'skmw-pending');
     const label = st === 'published' ? 'Sent' : st === 'failed' ? 'Failed' : (d.getTime() < now ? 'Overdue' : 'Pending');
+    const grp = p.community_slug
+      ? `<div class="skmw-grp"><span class="skmw-grp-ic">${escapeHtml(p.community_slug.slice(0, 1))}</span><a href="${escapeHtml(p.community_url || ('https://www.skool.com/' + p.community_slug))}" target="_blank" rel="noopener" title="Open community">${escapeHtml(p.community_slug)}</a></div>`
+      : '';
     return `<div class="skmw-item" data-id="${p.id}">
-      <div class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} <span class="skmw-pill ${cls}">${label}</span></div>
+      <div class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} <span class="skmw-pill ${cls}">${label}</span> ${grp}</div>
       <div class="c">${(p.content || '').slice(0, 160) || '(empty)'}</div>
     </div>`;
   }).join('');
 
   list.querySelectorAll('.skmw-item').forEach((node) => {
-    node.addEventListener('click', () => {
+    node.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
       const post = calState.posts.find((p) => String(p.id) === node.dataset.id);
       if (post && (post.status || 'pending') === 'pending') {
         renderEditForm(post, list);
@@ -1066,6 +1210,7 @@ function renderEditForm(post, container) {
   const gifOn = !!post.gif_search;
   const minDt = toDtLocal(new Date());
 
+  container.closest('.skmw-pop')?.classList.add('editing');
   container.innerHTML = `
     <div class="skmw-edit-header">
       <button class="skmw-btn-back" id="skmw-edit-back">← Back to list</button>
@@ -1127,7 +1272,11 @@ function renderEditForm(post, container) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: null };
+      // Preserve the post's GIF term: the server treats null as "not
+      // provided" (update skips None), so sending null would NOT wipe it —
+      // but it also would never re-arm the publisher's GIF fallback for an
+      // edited post. Resend the stored term so the GIF still gets attached.
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
@@ -1155,16 +1304,17 @@ function renderEditForm(post, container) {
 // INIT + OBSERVER
 // ---------------------------------------------------------------------------
 function observe() {
-  const obs = new MutationObserver(() => { injectButtons(); injectScheduleInComposer(); injectCalendarIcon(); });
+  const obs = new MutationObserver(() => { injectButtons(); injectScheduleInComposer(); });
   obs.observe(document.body, { childList: true, subtree: true });
 }
 async function init() {
   injectStyles();
   observe();
-  setTimeout(() => { injectButtons(); injectScheduleInComposer(); injectCalendarIcon(); }, 1500);
+  startDiscardWatcher();
+  setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [SKapi Magic Writer] loaded');
+  console.log('✨ [SKapi Magic Writer] loaded — v0.4.5-TEST10');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
