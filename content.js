@@ -1285,7 +1285,7 @@ function mountPop(pop) {
 function renderCalendar() {
   document.querySelector('.skmw-pop')?.remove();
   const pop = el(`<div class="skmw-pop">
-    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><span style="display:inline-flex;align-items:center;"><label class="skmw-ac" title="Keep only the 5 newest Sent posts (and none older than 7 days)"><input type="checkbox" id="skmw-ac">auto-clean 🧹</label><button class="skmw-pop-x">✕</button></span></div>
+    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><span style="display:inline-flex;align-items:center;"><label class="skmw-ac" title="Keep only the 5 newest Sent posts (and none older than 7 days)">🧹<input type="checkbox" id="skmw-ac">auto-clean</label><button class="skmw-pop-x">✕</button></span></div>
     <div class="skmw-tabs">
       <div class="skmw-tab" data-tab="upcoming">Upcoming</div>
       <div class="skmw-tab" data-tab="published">Sent</div>
