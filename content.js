@@ -1439,7 +1439,7 @@ function renderList() {
 // ---------------------------------------------------------------------------
 function renderEditForm(post, container) {
   const content = post.content || '';
-  const chosen = new Date(post.scheduled_for);
+  let chosen = new Date(post.scheduled_for);
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
   const gifOn = !!post.gif_search;
   const minDt = toDtLocal(new Date());
