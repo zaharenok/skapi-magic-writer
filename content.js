@@ -12,10 +12,11 @@ const INK = '#0A0A0A';
 // ---------------------------------------------------------------------------
 function clearComposer() {
   // Empty the composer so Skool's "You haven't finished your post yet"
-  // dialog never triggers on close. ProseMirror syncs its state from real
-  // input events (DOMObserver re-parses DOM mutations, prosemirror-view
-  // domchange.ts), so every pass must go through execCommand — never a
-  // bare DOM write without a follow-up input event.
+  // dialog never triggers on close. Ground truth (2026-10-24): Skool
+  // serializes the ProseMirror STATE — the TipTap commands API is the
+  // reliable empty path; keep the execCommand passes as fallback.
+  const editorPre = findEditor();
+  try { if (editorPre && editorPre.editor) editorPre.editor.commands.clearContent(true); } catch (_) {}
   const titleInput = findTitleInput();
   if (titleInput && titleInput.value) setInput(titleInput, '');
   const editor = findEditor();
@@ -38,6 +39,21 @@ function clearComposer() {
   if (editor.textContent.trim()) {
     editor.textContent = '';
     editor.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  }
+  // Attachments (GIFs, images, files) live OUTSIDE the editor document —
+  // the composer schema has no image node — and they keep the "unfinished"
+  // guard armed after the text is gone. Remove them via their controls
+  // inside the container that holds both the editor and the Post button.
+  let root = editor.parentElement;
+  for (let i = 0; i < 10 && root; i++) {
+    if ([...root.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Post')) break;
+    root = root.parentElement;
+  }
+  if (root) {
+    root.querySelectorAll('button, [role="button"]').forEach((btn) => {
+      const lbl = ((btn.getAttribute('aria-label') || '') + ' ' + (btn.getAttribute('title') || '')).toLowerCase();
+      if (/remove|delete|detach/.test(lbl)) { try { btn.click(); } catch (_) {} }
+    });
   }
   console.log(`[skmw] clearComposer: title=${!titleInput ? 'not found' : titleInput.value ? 'NOT cleared' : 'cleared'} editor=${editor.textContent.trim() ? 'NOT cleared' : 'cleared'}`);
 }
@@ -69,39 +85,23 @@ async function closeComposer() {
     }
     {
 
-      // Find Skool's confirmation modal. Look for role="dialog"/"alertdialog",
-      // classes like modal/dialog/confirm (case-insensitive), or fixed-position
-      // overlays containing cancel/discard/leave/publish/finish text.
+      // Find Skool's confirmation modal. Ground truth (2026-10-24): Skool
+      // uses styled-components v6 hashed sc-* classes, so class-based
+      // matching is dead, and position/z-index heuristics false-positive on
+      // the fixed community sidebar. Anchor on the guard TEXT instead, then
+      // take the innermost container that also holds buttons.
+      const GUARD_RE = /haven['’]t finished|without finishing|unsaved changes|discard (?:this )?post/i;
       const findModal = () => {
-        const candidates = [
-          ...document.querySelectorAll('[role="dialog"]'),
-          ...document.querySelectorAll('[role="alertdialog"]'),
-          ...document.querySelectorAll('[class*="modal" i]'),
-          ...document.querySelectorAll('[class*="dialog" i]'),
-          ...document.querySelectorAll('[class*="confirm" i]'),
-          ...document.querySelectorAll('[aria-modal="true"]'),
-          ...document.querySelectorAll('[class*="overlay" i]'),
-        ];
-        // Also check for fixed-position overlays that look like modals.
-        // Require an inner button — a plain dropdown menu ("Cancel" item)
-        // has no buttons inside, so it won't be mistaken for a dialog.
-        const allDivs = [...document.querySelectorAll('div')];
-        for (const div of allDivs) {
-          const style = window.getComputedStyle(div);
-          if (style.position === 'fixed' && style.zIndex && parseInt(style.zIndex) > 100) {
-            if (!div.querySelector('button, [role="button"]')) continue;
-            const text = (div.textContent || '').toLowerCase();
-            if (/cancel|discard|leave|unsaved|publish|finish/.test(text)) {
-              candidates.push(div);
-            }
-          }
+        if (!GUARD_RE.test(document.body.textContent || '')) return [];
+        const hits = [];
+        for (const el of document.querySelectorAll('div, section')) {
+          if (!GUARD_RE.test(el.textContent || '')) continue;
+          if (!el.querySelector('button, [role="button"]')) continue;
+          hits.push(el);
         }
-        // Sort deepest/most specific first; return the full list so the
-        // accept-button search can fall through candidates (the deepest
-        // container might hold only text, not the buttons).
-        if (candidates.length === 0) return [];
-        candidates.sort((a, b) => (b.querySelectorAll('*').length - a.querySelectorAll('*').length));
-        return candidates;
+        // Innermost first: the card holding the guard text and its buttons.
+        hits.sort((a, b) => (a.querySelectorAll('*').length - b.querySelectorAll('*').length));
+        return hits;
       };
 
       // Classification strategy lives in skmwFindAccept (shared with the
@@ -539,6 +539,10 @@ function injectButtons() {
     const scheduled = el(`<button class="skmw-btn skmw-scheduled" style="margin-left:8px;">📅 Scheduled<span class="b zero">0</span></button>`);
     scheduled.addEventListener('click', (e) => { e.stopPropagation(); toggleCalendar(); });
     anchor.parentNode.insertBefore(scheduled, magic.nextSibling);
+    // SPA community switches re-render the topbar and this observer re-injects
+    // the button with a fresh hidden '0' badge; sync it from the already-loaded
+    // state instead of waiting for the next 120s poll.
+    updateBadge();
   }
 }
 // Schedule lives inside the OPEN composer, next to Cancel/Post.
