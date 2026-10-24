@@ -1119,24 +1119,28 @@ function gifTermFrom(text) {
   const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
   return words.find((w) => !stop.has(w)) || 'success';
 }
-// Find the GIF currently inserted in the Skool composer, if any. Returns the
-// image URL so the scheduled publisher can re-attach the exact same GIF.
-// New Skool may render the picked GIF as <img> re-hosted on assets.skool.com
-// or as <video> — match .gif sources in both.
+// Find the media currently inserted in the Skool composer, if any. Returns
+// the asset URL so the scheduled publisher can re-attach the exact same GIF.
+// Native picker picks land as re-hosted imgs (assets.skool.com, no .gif
+// extension) or as <video> mp4 — so scan ANY visible media, preference-
+// ordered: explicit .gif imgs, giphy/tenor imgs, any img, then videos.
 function findComposerGif() {
   const editor = findEditor();
   if (!editor) return null;
-  const isGifSrc = (s) => {
-    s = (s || '').toLowerCase();
-    return s.includes('giphy') || s.includes('tenor') || s.includes('.gif');
-  };
-  for (const img of editor.querySelectorAll('img')) {
-    const src = img.currentSrc || img.src || '';
-    if (isGifSrc(src)) return src;
-  }
-  for (const v of editor.querySelectorAll('video')) {
-    const src = v.currentSrc || v.src || v.poster || '';
-    if (isGifSrc(src)) return src;
+  const visible = (n) => { const r = n.getBoundingClientRect(); return r.width >= 50 && r.height >= 50; };
+  const srcOf = (n) => n.currentSrc || n.src || '';
+  const pools = [
+    editor.querySelectorAll('img[src*=".gif" i]'),
+    editor.querySelectorAll('img[src*="giphy"], img[src*="tenor"]'),
+    editor.querySelectorAll('img'),
+    editor.querySelectorAll('video'),
+  ];
+  for (const pool of pools) {
+    for (const n of pool) {
+      if (!visible(n)) continue;
+      const s = n.tagName === 'VIDEO' ? (srcOf(n) || n.poster || '') : srcOf(n);
+      if (s && !s.startsWith('data:')) return s;
+    }
   }
   return null;
 }
