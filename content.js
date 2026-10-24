@@ -878,6 +878,11 @@ async function insertIntoComposer(text, attachGif = false) {
 // ---------------------------------------------------------------------------
 // SCHEDULE DIALOG
 // ---------------------------------------------------------------------------
+// Shared media description used by both edit surfaces (module scope —
+// renderEditForm cannot see function-local consts).
+const gifDesc = (u, term) => u
+  ? escapeHtml(u.slice(0, 60)) + (u.length > 60 ? '…' : '')
+  : `search fallback “${escapeHtml(term || '')}”`;
 async function openScheduleDialog(post = null, prefillText = null) {
   if (dialogOpen) return;
   dialogOpen = true;
@@ -904,11 +909,15 @@ async function openScheduleDialog(post = null, prefillText = null) {
 
   const hasComposerMedia = !!(findEditor() && findEditor().querySelector('img, video'));
   const gifSavedNote = composerGif || lastGifTerm;
+  // Media note for edit mode: exact GIF URL or its search fallback.
+  const editGifNote = (isEdit && (post?.media_url || post?.gif_search))
+    ? `<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be attached:</strong> ${gifDesc(post?.media_url, post?.gif_search)}</div>`
+    : '';
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
-    ${!isEdit ? (gifSavedNote ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : (hasComposerMedia ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF picked via the 🎬 GIF flow is carried over. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>' : '')) : ''}
+    ${!isEdit ? (gifSavedNote ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : (hasComposerMedia ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF picked via the 🎬 GIF flow is carried over. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>' : '')) : editGifNote}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         ${isEdit
@@ -1020,6 +1029,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   if (!isEdit) renderUpcoming(document.getElementById('skmw-s-up'), close);
 
   document.getElementById('skmw-s-save').addEventListener('click', async () => {
+    console.log('[skmw] schedule save clicked', { isEdit, id: post?.id, chosen: chosen.toISOString() });
     // Read the field directly — a change event may not have fired yet if the
     // user edits the time and clicks Save immediately.
     const v = new Date($dt.value);
@@ -1442,7 +1452,7 @@ function renderEditForm(post, container) {
     </div>
     <label>Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
-    <label style="margin-top:14px;">Publish at</label>
+    ${(post.media_url || post.gif_search) ? `<div style="font-size:12px;color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${gifDesc(post.media_url, post.gif_search)}</div>` : ''}
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
     <div class="skmw-cal-grid" id="skmw-e-cal"></div>
@@ -1485,6 +1495,7 @@ function renderEditForm(post, container) {
   const hideErr = () => { document.getElementById('skmw-e-err').style.display = 'none'; };
 
   document.getElementById('skmw-e-save').addEventListener('click', async () => {
+    console.log('[skmw] popup update clicked', { id: post.id, chosen: chosen.toISOString() });
     // Read the field directly — a change event may not have fired yet if the
     // user edits the time and clicks Update immediately.
     const v = new Date($dt.value);
