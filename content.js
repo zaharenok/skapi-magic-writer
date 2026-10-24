@@ -401,9 +401,9 @@ function injectStyles() {
     .skmw-scheduled{position:relative;}
     .skmw-scheduled .b{position:absolute;top:-6px;right:-6px;background:${INK};color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;border-radius:8px;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;}
     .skmw-scheduled .b.zero{display:none;}
-    .skmw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2147483000;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;}
-    .skmw-modal{background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:16px;box-shadow:6px 6px 0 rgba(0,0,0,.15);width:100%;max-width:560px;padding:22px;font-family:ui-sans-serif,system-ui,sans-serif;}
-    .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;}
+    .skmw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2147483000;display:flex;justify-content:center;padding:24px 16px;overflow:auto;}
+    .skmw-modal{background:#fff;color:#0A0A0A;border:2px solid ${INK};border-radius:16px;box-shadow:6px 6px 0 rgba(0,0,0,.15);width:100%;max-width:560px;padding:22px;margin:auto;font-family:ui-sans-serif,system-ui,sans-serif;}
+    .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;cursor:move;user-select:none;}
     .skmw-modal .sub{color:#374151;font-size:13px;margin:0 0 16px;}
     .skmw-modal label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
     .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
@@ -610,6 +610,7 @@ async function openMagicDialog() {
   </div>`);
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
+  makeDraggable(modal, 'skmw_pos_magic', '.skmw-modal h2');
   setTimeout(() => document.getElementById('skmw-in').focus(), 60);
 
   // Pro gate: community-context checkbox only for active subscribers.
@@ -1195,8 +1196,8 @@ function refreshCalendar() {
     if (document.querySelector('.skmw-pop')) renderCalendar();
   });
 }
-function makeDraggable(pop, storageKey) {
-  const h = pop.querySelector('.skmw-pop-h');
+function makeDraggable(pop, storageKey, headerSel = '.skmw-pop-h') {
+  const h = pop.querySelector(headerSel);
   if (!h) return;
   const clamp = (x, y, r) => ({
     x: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)),
@@ -1209,6 +1210,8 @@ function makeDraggable(pop, storageKey) {
     const dx = e.clientX - r.left;
     const dy = e.clientY - r.top;
     pop.style.transform = 'none';
+    pop.style.position = 'fixed';
+    pop.style.margin = '0';
     const move = (ev) => {
       const c = clamp(ev.clientX - dx, ev.clientY - dy, r);
       pop.style.left = c.x + 'px';
@@ -1230,6 +1233,8 @@ function makeDraggable(pop, storageKey) {
     const r = pop.getBoundingClientRect();
     if (p.x > window.innerWidth - 80 || p.y > window.innerHeight - 60) return; // off-screen (resize) → keep centered
     const c = clamp(p.x, p.y, r);
+    pop.style.position = 'fixed';
+    pop.style.margin = '0';
     pop.style.transform = 'none';
     pop.style.left = c.x + 'px';
     pop.style.top = c.y + 'px';
@@ -1316,7 +1321,7 @@ function renderList() {
   };
   const items = calState.posts.filter(byTab).sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
   if (!items.length) {
-    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">✨ Magic post</button></div>`;
+    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">✨ Click here to see magic</button></div>`;
     list.querySelector('.skmw-empty-magic')?.addEventListener('click', (e) => {
       e.stopPropagation();
       document.querySelector('.skmw-pop')?.remove();
