@@ -1389,7 +1389,7 @@ function renderList() {
       ? `<div class="skmw-grp"><span class="skmw-grp-ic">${escapeHtml(p.community_slug.slice(0, 1))}</span><a href="${escapeHtml(p.community_url || ('https://www.skool.com/' + p.community_slug))}" target="_blank" rel="noopener" title="Open community">${escapeHtml(p.community_slug)}</a></div>`
       : '';
     const cd = st === 'pending' ? `<span class="skmw-cd" data-ts="${d.getTime()}"></span>` : '';
-    const x = `<button class="skmw-x" data-id="${p.id}" data-st="${st}" title="Delete from list">✕</button>`;
+    const x = `<button class="skmw-x" data-id="${p.id}" title="Delete from list">✕</button>`;
     const openUrl = st === 'published' ? ` data-url="${escapeHtml(p.published_url || p.community_url || '')}"` : '';
     return `<div class="skmw-item" data-id="${p.id}"${openUrl}>
       <div class="t">${d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} <span class="skmw-pill ${cls}">${label}</span> ${cd} ${grp} ${x}</div>
@@ -1422,16 +1422,16 @@ function renderList() {
       }
     });
   });
-  // ✕ deletes a row straight from the list; a pending post is a future
-  // publish, so confirm before cancelling it (Sent/Failed delete outright).
+  // ✕ deletes a row straight from the list (any status). Re-render the
+  // whole list afterwards so an emptied tab falls back to the empty state
+  // instead of collapsing to bare tabs.
   list.querySelectorAll('.skmw-x').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (btn.dataset.st === 'pending' && !confirm('Delete this scheduled post?')) return;
       try {
         await apiRequest('/scheduled-posts', { method: 'DELETE', body: { id: parseInt(btn.dataset.id, 10) } });
-        btn.closest('.skmw-item')?.remove();
         await loadScheduled();
+        renderList();
         updateBadge();
       } catch (err) { toast('⚠️ ' + (err.message || 'delete failed')); }
     });
