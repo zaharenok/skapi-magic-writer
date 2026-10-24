@@ -1083,6 +1083,21 @@ function notifyEnabled(cb) {
   try { chrome.storage.local.get(['skmw_notify'], (r) => cb(r ? r.skmw_notify !== false : true)); }
   catch (_) { cb(true); }
 }
+// One chime per published post — across polls AND across tabs (each tab has
+// its own JS world, so the sent-mark lives in chrome.storage).
+const _notifiedPublish = new Set();
+function shouldNotifyPublish(id, cb) {
+  if (_notifiedPublish.has(id)) return cb(false);
+  const key = 'skmw_ntf_' + id;
+  try {
+    chrome.storage.local.get([key], (r) => {
+      if (r && r[key]) { _notifiedPublish.add(id); return cb(false); }
+      _notifiedPublish.add(id);
+      try { chrome.storage.local.set({ [key]: 1 }); } catch (_) {}
+      cb(true);
+    });
+  } catch (_) { cb(true); }
+}
 function ding() {
   // Bundled pencil-sound chime (user-provided WAV). Audio elements load
   // chrome-extension:// resources, so the file must stay listed in
@@ -1180,7 +1195,7 @@ async function loadScheduled() {
     const newly = calState.posts.filter((p) => (p.status || '') === 'published' && prev[p.id] === 'pending');
     calState.statusById = {};
     calState.posts.forEach((p) => { calState.statusById[p.id] = p.status || 'pending'; });
-    if (newly.length) notifyEnabled((on) => { if (on) newly.forEach(notifyPublished); });
+    if (newly.length) notifyEnabled((on) => { if (!on) return; newly.forEach((p) => shouldNotifyPublish(p.id, (ok) => { if (ok) notifyPublished(p); })); });
   } catch (e) {
     calState.posts = [];
     // Extension context invalidated → getJwt already warned the user once;
@@ -1331,7 +1346,13 @@ function renderList() {
     if (calState.tab === 'failed') return st === 'failed';
     return st === 'pending';
   };
-  const items = calState.posts.filter(byTab).sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
+  const items = calState.posts.filter(byTab).sort((a, b) => {
+    // Upcoming: soonest to fire first. Sent/Failed: newest at the top.
+    if (calState.tab !== 'upcoming') {
+      return new Date(b.published_at || b.scheduled_for) - new Date(a.published_at || a.scheduled_for);
+    }
+    return new Date(a.scheduled_for) - new Date(b.scheduled_for);
+  });
   if (!items.length) {
     list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">🪄 Click here to see the magic</button></div>`;
     list.querySelector('.skmw-empty-magic')?.addEventListener('click', (e) => {
