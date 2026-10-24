@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "SKapi Magic Writer",
+  "name": "__MSG_extName__",
   "version": "0.5.0",
-  "version_name": "0.5.0",
-  "description": "Magic post writer + scheduler for Skool — experimental, UI lives inside Skool (no popup). [TEST BUILD]",
+  "default_locale": "en",
+  "description": "__MSG_extDesc__",
   "permissions": [
     "storage",
     "cookies",
