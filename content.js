@@ -415,6 +415,7 @@ function injectStyles() {
     .skmw-btn-pink{background:${BRAND};color:${INK};}
     .skmw-btn-pink:disabled{opacity:.5;cursor:wait;}
     .skmw-err{background:#FEF2F2;border:2px solid #FCA5A5;color:#991B1B;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none;}
+    .skmw-trial{font-size:13px;font-weight:600;color:#374151;background:#F9FAFB;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin:0 0 12px;}
     .skmw-loading{margin-top:16px;text-align:center;}
     .skmw-progress{width:100%;height:8px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:10px;}
     .skmw-progress-bar{height:100%;background:linear-gradient(90deg, ${BRAND}, ${INK});background-size:200% 100%;animation:skmw-progress-anim 1.5s ease-in-out infinite;}
@@ -575,6 +576,7 @@ async function openMagicDialog() {
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal">
     <h2>✨ Magic Post Writer</h2>
+    <div id="skmw-trial" class="skmw-trial" style="display:none"></div>
     <p class="sub">Paste raw thoughts — AI turns them into a post ready to drop into Skool.</p>
     <label>Your thoughts</label>
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
@@ -606,15 +608,32 @@ async function openMagicDialog() {
 
   // Pro gate: community-context checkbox only for active subscribers.
   // Server re-checks anyway (/ai/generate returns pro_feature_required).
-  checkProAccess().then((pro) => {
+  checkProAccess().then((acc) => {
     const wrap = document.getElementById('skmw-ctx-wrap');
     const cb = document.getElementById('skmw-ctx');
     const sel = document.getElementById('skmw-ctx-count');
+    const pro = !!(acc && acc.pro);
     if (wrap && !pro) {
       cb.disabled = true;
       sel.disabled = true;
       wrap.style.opacity = '.5';
       wrap.title = '🔒 Pro feature — requires an active subscription';
+    }
+    // Trial badge under the dialog title
+    const badge = document.getElementById('skmw-trial');
+    if (!badge || !acc) return;
+    if (acc.state === 'trial') {
+      badge.innerHTML = `🆓 Trial: ${acc.posts_used ?? 0}/${acc.posts_limit ?? 5} posts`;
+      badge.style.display = 'block';
+    } else if (acc.state === 'trial_expired') {
+      const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
+      badge.innerHTML = `⚠️ Trial over — posts include an upgrade note · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Get full access</a>`;
+      badge.style.display = 'block';
+    } else if (acc.state === 'subscribed') {
+      badge.innerHTML = '⭐ Full access';
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none'; // gate_disabled / unknown
     }
   });
 
@@ -646,7 +665,7 @@ async function openMagicDialog() {
         communityContext = await collectCommunityContext(maxPosts);
         if (loadingText) loadingText.textContent = '✨ Generating your post...';
       }
-      const body = { prompt };
+      const body = { prompt, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (communityContext) body.community_context = communityContext;
       const data = await apiRequest('/ai/generate', { method: 'POST', body });
       if (!data.success || !data.text) throw new Error(data.error || 'No text returned');
@@ -681,21 +700,22 @@ async function openMagicDialog() {
 // ---------------------------------------------------------------------------
 // COMMUNITY CONTEXT (Pro): scrape recent feed posts from the DOM
 // ---------------------------------------------------------------------------
-let __skmwProCache = null; // { at: epoch_ms, pro: bool }
+let __skmwProCache = null; // { at: epoch_ms, access: {pro, state, posts_used, posts_limit, subscribe_url} }
 
 async function checkProAccess() {
   // /ai/access is cheap, but no need to call it on every dialog open.
+  // Returns the full response (not just the boolean) for the trial badge.
   const now = Date.now();
-  if (__skmwProCache && now - __skmwProCache.at < 5 * 60 * 1000) return __skmwProCache.pro;
-  let pro = false;
+  if (__skmwProCache && now - __skmwProCache.at < 5 * 60 * 1000) return __skmwProCache.access;
+  let access = { pro: false, state: 'unknown' };
   try {
     const data = await apiRequest('/ai/access');
-    pro = !!(data && data.pro);
+    if (data && typeof data === 'object') access = data;
   } catch (e) {
     console.warn('[skmw] /ai/access failed:', e && e.message);
   }
-  __skmwProCache = { at: now, pro };
-  return pro;
+  __skmwProCache = { at: now, access };
+  return access;
 }
 
 const CTX_MAX_CHARS = 24000; // общий бюджет контекста (~6-8K токенов для free-моделей)
@@ -996,8 +1016,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
       const gifSearch = gifUrl
         ? gifTermFrom(finalContent)
         : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
-      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl };
-      if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
+      const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      if (isEdit && post?.id) {
+        // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
+        const { language: _langOmitted, ...putBody } = body;
+        await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...putBody, id: post.id } });
+      }
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
       close(true);
       toast(isEdit ? '✅ Post updated' : '✅ Post scheduled');
@@ -1314,7 +1338,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [SKapi Magic Writer] loaded — v0.4.5-TEST10');
+  console.log('✨ [SKapi Magic Writer] loaded — v0.5.0');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
