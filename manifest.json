@@ -18,7 +18,7 @@
   },
   "options_page": "options.html",
   "action": {
-    "default_title": "SKapi Magic Writer — open Skool and use the ✨ / 📅 buttons",
+    "default_title": "Skool Magic Writer: use the ✨ and 📅 buttons on skool.com",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

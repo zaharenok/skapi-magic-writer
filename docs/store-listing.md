@@ -1,210 +1,211 @@
-# Chrome Web Store — submission kit (SKapi Magic Writer v0.5.0)
+# Chrome Web Store — submission kit (Skool Magic Writer v0.5.0)
 
 Zip для загрузки: `chrome-web-store-v0.5.0.zip` (в корне сабмодуля).
 Консоль: https://chrome.google.com/webstore/devconsole (нужен аккаунт разработчика, разовый взнос $5).
 
-## Что заполнять в консоли (обязательные поля)
+## Что заполнять в консоли
 
 - **Upload zip** → `chrome-web-store-v0.5.0.zip`
-- **Store listing → Locale**: добавить языки ниже (Add locale), в каждый вставить Name / Short description / Detailed description из разделов.
-- **Category**: Productivity · **Language**: все добавленные.
-- **Screenshots**: 1–5 штук 1280×800 (или 640×400). Снимки: ✨-диалог генерации, 📅 окно Schedule post (календарь + пресеты), попап со списком отложенных постов.
-- **Promo images**: small 440×280 (обязательно), marquee 1400×560 (опционально). Можно собрать из icon128 + скриншот.
-- **Icon**: 128×128 уже в zip; для витрины загрузить `icons/icon128.png`.
+- **Store listing → Locale**: добавить языки ниже (Add locale), в каждый вставить Name / Short description / Detailed description из своего раздела.
+- **Category**: Productivity.
+- **Screenshots**: 1–5 штук 1280×800. Советую снять: диалог ✨ Magic Post, окно 📅 Schedule post с пресетами, попап со списком отложенных постов.
+- **Promo images**: small 440×280 (обязательная), marquee 1400×560 (по желанию).
+- **Icon**: 128×128 уже в zip, для витрины загрузить `icons/icon128.png`.
 - **Privacy tab**:
-  - Single purpose: `Write, improve and schedule posts on skool.com, and notify when they publish.`
-  - Permission justifications:
-    - `storage` — "Saves user settings (default community, notify toggle, dialog position) locally."
-    - `cookies` — "Reads the Skool auth_token cookie so the user's own Skool session publishes their posts; the token is never displayed or shared."
+  - Single purpose: `Write, improve and schedule posts on skool.com, and notify the user when they publish.`
+  - Оправдания разрешений:
+    - `storage` — "Saves user settings (default community, notify toggle, dialog position) locally in the browser."
+    - `cookies` — "Reads the Skool auth_token cookie so posts publish through the user's own Skool session. The token is never shown to the user or sent anywhere except our API."
     - `notifications` — "Shows a system notification when a scheduled post goes out."
-    - `host_permissions *.skool.com` — "The editor UI lives inside skool.com pages."
-    - `host_permissions api.skapi.pro` — "Saves/loads scheduled posts and AI generation through our API (api.skapi.pro). No other servers are contacted."
-  - Data usage: не продаём данные, не используется для рекламы/кредитования; privacy policy URL обязателен (см. ниже).
-  - **Privacy policy URL** — ОБЯЗАТЕЛЕНО для расширений с host_permissions. Поставь страницу на skapi.pro (например `https://skapi.pro/privacy`) — текст-заготовку можно взять из раздела Privacy policy ниже.
-- **Distribution**: Public. Страны — все.
-- Submit for review. Ревью с cookies+host_permissions обычно 1–5 дней.
+    - `host_permissions *.skool.com` — "The whole editor UI lives inside skool.com pages, next to the composer."
+    - `host_permissions api.skapi.pro` — "Saves scheduled posts and generates text through our own API. No other servers are contacted."
+  - Data usage: данные не продаются, для рекламы не используются.
+  - **Privacy policy URL** обязателен при host_permissions. Заготовка текста в конце файла, повесить на `https://skapi.pro/privacy` (или подобное).
+- **Distribution**: Public, все страны.
+- Submit for review. С cookies и host_permissions ревью обычно занимает 1–5 дней.
 
 ---
 
 ## Переводы витрины (Name ≤45 · Short ≤132 · Detailed)
 
 ### en — English
-**Name:** SKapi Magic Writer
-**Short:** Write and schedule Skool posts with AI, GIFs and a calendar — right inside your community.
+**Name:** Skool Magic Writer
+**Short:** Write Skool posts with a little AI help, attach GIFs and schedule them for later. All inside skool.com.
 **Detailed:**
-SKapi Magic Writer adds an AI writing assistant and a post scheduler directly into skool.com — no tab switching, no copy-paste.
+Skool Magic Writer puts two small buttons next to the composer you already use on skool.com. Everything happens right there, where you normally write.
 
-✨ MAGIC POST — describe your idea in any language, get a ready-to-publish post with a title and paragraphs.
-📅 SCHEDULE — pick a date and time (or use quick presets like "Tomorrow 9:00"), and the post publishes automatically, as you, in your community.
-🎬 GIFs — attach a GIF and it goes out with the post.
-🔔 Notifications — get a system notification with a link when a scheduled post is live.
-🗂 Manager — a popup lists all your scheduled, published and failed posts with one-click delete.
+✨ Magic Post: describe your idea in a couple of words, in any language, and you get a draft with a title and paragraphs. Tweak it, then post.
+📅 Schedule: pick a time (there are quick presets like Tomorrow 9:00) and the post goes out on its own, from your account.
+🎬 GIFs: attach one and it publishes together with the post.
+🔔 When a scheduled post is live you get a normal system notification with a link.
+🗂 The calendar button in the top bar keeps all your scheduled, published and failed posts in one list.
 
-Works with your own Skool session: no passwords, no extra logins. Free trial included.
+The extension works with the Skool session you are already logged into. No passwords, no second account. There is a free trial, after that a subscription.
 
-Privacy: the extension only reads your Skool auth cookie to publish as you, stores settings locally, and talks only to our API (api.skapi.pro). No ads, no trackers, no data selling.
+On privacy: the extension reads your Skool session cookie so it can publish as you, saves your settings in your browser, and only ever talks to our own server at api.skapi.pro. No ads, no analytics, no data selling.
 
 ### ru — Русский
-**Name:** SKapi Magic Writer
-**Short:** Пишите и откладывайте посты в Skool с ИИ, GIF и календарём — прямо внутри вашего сообщества.
+**Name:** Skool Magic Writer
+**Short:** Пишите посты для Skool с помощью ИИ, прикрепляйте GIF и откладывайте публикацию. Всё внутри skool.com.
 **Detailed:**
-SKapi Magic Writer добавляет ИИ-ассистента и планировщик постов прямо в skool.com — без переключения вкладок и копипасты.
+Skool Magic Writer ставит две кнопки рядом с полем, где вы обычно пишете посты в skool.com. Весь интерфейс живёт там же, ничего настраивать не нужно.
 
-✨ МАГИЧЕСКИЙ ПОСТ — опишите идею на любом языке, получите готовый пост с заголовком и абзацами.
-📅 РАСПИСАНИЕ — выберите дату и время (или быстрые пресеты вроде «Завтра в 9:00») — пост опубликуется автоматически, от вашего имени.
-🎬 GIF — прикрепите гифку, она уйдёт вместе с постом.
-🔔 Уведомления — системное уведомление со ссылкой, когда отложенный пост вышел.
-🗂 Менеджер — попап со всеми отложенными, опубликованными и неудавшимися постами, удаление в один клик.
+✨ Магический пост: опишите идею парой слов на любом языке, получите черновик с заголовком и абзацами. Поправили и опубликовали.
+📅 Расписание: выберите время (есть быстрые пресеты вроде «Завтра в 9:00»), и пост выйдет сам, с вашего аккаунта.
+🎬 GIF: прикрепите гифку, она уйдёт вместе с постом.
+🔔 Когда отложенный пост опубликован, приходит обычное системное уведомление со ссылкой.
+🗂 Кнопка календаря в шапке собирает все отложенные, опубликованные и неудавшиеся посты в один список.
 
-Работает с вашей сессией Skool: без паролей и лишних входов. Есть бесплатный пробный период.
+Расширение работает через вашу сессию Skool. Без паролей и вторых аккаунтов. Есть бесплатный пробный период, дальше подписка.
 
-Приватность: расширение читает только cookie Skool, чтобы публиковать от вашего имени, хранит настройки локально и обращается только к нашему API (api.skapi.pro). Без рекламы и трекеров.
+Про приватность: расширение читает cookie сессии Skool, чтобы публиковать посты от вашего имени, хранит настройки в браузере и общается только с нашим сервером api.skapi.pro. Никакой рекламы и аналитики, данные не продаём.
 
 ### uk — Українська
-**Name:** SKapi Magic Writer
-**Short:** Створюйте й плануйте пости у Skool зі ШІ, GIF і календарем — просто у вашій спільноті.
+**Name:** Skool Magic Writer
+**Short:** Створюйте пости для Skool за допомогою ШІ, додавайте GIF і плануйте публікацію. Усе в середині skool.com.
 **Detailed:**
-SKapi Magic Writer додає ШІ-асистента та планувальник постів прямо в skool.com — без перемикання вкладок.
+Skool Magic Writer додає дві кнопки поруч із полем, де ви зазвичай пишете пости в skool.com. Увесь інтерфейс живе там же.
 
-✨ МАГІЧНИЙ ПОСТ — опишіть ідею будь-якою мовою, отримайте готовий пост із заголовком та абзацами.
-📅 РОЗКЛАД — оберіть дату й час або швидкі пресети — пост опублікується автоматично від вашого імені.
-🎬 GIF — додайте гіфку, вона вийде разом із постом.
-🔔 Повідомлення — системне сповіщення з посиланням, коли відкладений пост вийшов.
-🗂 Менеджер — попап зі всіма відкладеними, опублікованими та невдалими постами.
+✨ Магічний пост: опишіть ідею парою слів будь-якою мовою, отримаєте чернетку із заголовком і абзацами. Виправили і опублікували.
+📅 Розклад: виберіть час (є швидкі пресети на кшталт «Завтра о 9:00»), і пост вийде сам, з вашого акаунта.
+🎬 GIF: додайте гіфку, вона піде разом із постом.
+🔔 Коли відкладений пост опубліковано, приходить звичайне системне повідомлення з посиланням.
+🗂 Кнопка календаря у шапці збирає всі відкладені, опубліковані й невдалі пости в один список.
 
-Працює з вашою сесією Skool: без паролів. Є безкоштовний пробний період.
-Приватність: розширення читає лише cookie Skool, зберігає налаштування локально й звертається лише до нашого API (api.skapi.pro).
+Розширення працює через вашу сесію Skool. Без паролів і других акаунтів. Є безкоштовний пробний період, далі підписка.
+
+Про приватність: розширення читає cookie сесії Skool, щоб публікувати пости від вашого імені, зберігає налаштування в браузері і спілкується лише з нашим сервером api.skapi.pro. Реклами й аналітики немає, дані не продаємо.
 
 ### de — Deutsch
-**Name:** SKapi Magic Writer
-**Short:** Skool-Beiträge mit KI, GIFs und Kalender schreiben und planen — direkt in deiner Community.
+**Name:** Skool Magic Writer
+**Short:** Schreibe Skool-Beiträge mit etwas KI-Unterstützung, hänge GIFs an und plane sie für später. Alles in skool.com.
 **Detailed:**
-SKapi Magic Writer bringt einen KI-Schreibassistenten und einen Beitragsplaner direkt in skool.com — ohne Tab-Wechsel, ohne Copy-Paste.
+Skool Magic Writer setzt zwei kleine Buttons neben das Eingabefeld, das du auf skool.com eh schon benutzt. Alles passiert genau dort, wo du normalerweise schreibst.
 
-✨ MAGIC POST — beschreibe deine Idee in jeder Sprache und erhalte einen fertigen Beitrag mit Titel und Absätzen.
-📅 PLANEN — Datum und Uhrzeit wählen (oder Schnellvorlagen wie „Morgen 9:00“) — der Beitrag erscheint automatisch, von dir, in deiner Community.
-🎬 GIFs — GIF anhängen, es geht mit dem Beitrag raus.
-🔔 Benachrichtigungen — Systembenachrichtigung mit Link, sobald der geplante Beitrag live ist.
-🗂 Verwaltung — Popup mit allen geplanten, veröffentlichten und fehlgeschlagenen Beiträgen.
+✨ Magic Post: beschreibe deine Idee in ein paar Wörtern, in beliebiger Sprache, und du bekommst einen Entwurf mit Titel und Absätzen. Kurz überarbeiten, fertig.
+📅 Planen: Datum und Uhrzeit wählen (Schnellvorlagen wie „Morgen 9:00" inklusive), und der Beitrag geht von selbst raus, von deinem Konto.
+🎬 GIFs: eins anhängen, es erscheint zusammen mit dem Beitrag.
+🔔 Wenn ein geplanter Beitrag live ist, bekommst du eine normale Systembenachrichtigung mit Link.
+🗂 Der Kalender-Button in der Kopfzeile sammelt alle geplanten, veröffentlichten und fehlgeschlagenen Beiträge an einem Ort.
 
-Funktioniert mit deiner eigenen Skool-Sitzung: keine Passwörter, kein zusätzlicher Login. Kostenlose Testphase inklusive.
+Die Erweiterung nutzt die Skool-Sitzung, in der du schon eingeloggt bist. Keine Passwörter, kein zweites Konto. Es gibt eine kostenlose Testphase, danach ein Abo.
 
-Datenschutz: Die Erweiterung liest nur deinen Skool-Auth-Cookie, um in deinem Namen zu veröffentlichen, speichert Einstellungen lokal und kommuniziert ausschließlich mit unserer API (api.skapi.pro). Keine Werbung, keine Tracker.
+Zum Datenschutz: Die Erweiterung liest deinen Skool-Session-Cookie, um in deinem Namen zu veröffentlichen, speichert Einstellungen im Browser und spricht nur mit unserem eigenen Server api.skapi.pro. Keine Werbung, keine Tracker, kein Datenverkauf.
 
 ### es — Español
-**Name:** SKapi Magic Writer
-**Short:** Escribe y programa publicaciones en Skool con IA, GIFs y calendario — dentro de tu comunidad.
+**Name:** Skool Magic Writer
+**Short:** Escribe posts para Skool con ayuda de IA, adjunta GIFs y publícalos cuando quieras. Todo dentro de skool.com.
 **Detailed:**
-SKapi Magic Writer añade un asistente de escritura con IA y un programador de publicaciones directamente en skool.com — sin cambiar de pestaña ni copiar y pegar.
+Skool Magic Writer coloca dos botones pequeños junto al cuadro donde ya escribes en skool.com. Todo pasa ahí mismo, donde normalmente escribes.
 
-✨ PUBLICACIÓN MÁGICA — describe tu idea en cualquier idioma y obtén una publicación lista con título y párrafos.
-📅 PROGRAMAR — elige fecha y hora (o usa presets rápidos como «Mañana 9:00») y la publicación sale automáticamente, como tú, en tu comunidad.
-🎬 GIFs — adjunta un GIF y se publicará con el post.
-🔔 Notificaciones — recibe una notificación del sistema con enlace cuando se publique.
-🗂 Gestor — un popup con todas tus publicaciones programadas, publicadas y fallidas.
+✨ Magic Post: describe tu idea en un par de palabras, en cualquier idioma, y recibes un borrador con título y párrafos. Lo ajustas y publicas.
+📅 Programar: eliges fecha y hora (hay presets rápidos como «Mañana 9:00») y el post sale solo, desde tu cuenta.
+🎬 GIFs: adjunta uno y se publica junto con el post.
+🔔 Cuando un post programado sale a la luz recibes una notificación normal del sistema con su enlace.
+🗂 El botón de calendario en la barra superior guarda todos tus posts programados, publicados y fallidos en una sola lista.
 
-Funciona con tu propia sesión de Skool: sin contraseñas. Incluye prueba gratuita.
+La extensión funciona con la sesión de Skool en la que ya estás. Sin contraseñas ni cuentas nuevas. Hay prueba gratis y luego una suscripción.
 
-Privacidad: la extensión solo lee tu cookie de Skool para publicar en tu nombre, guarda ajustes localmente y solo se comunica con nuestra API (api.skapi.pro). Sin anuncios ni rastreadores.
+Sobre la privacidad: la extensión lee tu cookie de sesión de Skool para publicar en tu nombre, guarda los ajustes en tu navegador y solo habla con nuestro servidor api.skapi.pro. Sin anuncios, sin analítica, no vendemos datos.
 
 ### fr — Français
-**Name:** SKapi Magic Writer
-**Short:** Rédigez et planifiez vos posts Skool avec IA, GIF et calendrier — au sein de votre communauté.
+**Name:** Skool Magic Writer
+**Short:** Rédigez vos posts Skool avec un coup de main de l'IA, joignez des GIF et publiez plus tard. Tout dans skool.com.
 **Detailed:**
-SKapi Magic Writer intègre un assistant de rédaction IA et un planificateur de posts directement dans skool.com — sans changer d'onglet.
+Skool Magic Writer ajoute deux petits boutons à côté de la zone où vous écrivez déjà sur skool.com. Tout se passe là, dans votre flux de travail habituel.
 
-✨ POST MAGIQUE — décrivez votre idée dans n'importe quelle langue, obtenez un post prêt à publier avec titre et paragraphes.
-📅 PLANIFIER — choisissez date et heure (ou préréglages rapides comme « Demain 9:00 ») — le post est publié automatiquement, en votre nom.
-🎬 GIF — joignez un GIF, il partira avec le post.
-🔔 Notifications — une notification système avec lien dès la publication.
-🗂 Gestion — un popup liste vos posts planifiés, publiés et échoués.
+✨ Magic Post : décrivez votre idée en quelques mots, dans n'importe quelle langue, et vous recevez un brouillon avec titre et paragraphes. Vous ajustez, puis vous publiez.
+📅 Planifier : choisissez date et heure (des préréglages rapides comme « Demain 9:00 » sont inclus) et le post part tout seul, depuis votre compte.
+🎬 GIF : joignez-en un, il part avec le post.
+🔔 Quand un post planifié est publié, vous recevez une notification système classique avec un lien.
+🗂 Le bouton calendrier en haut de page garde tous vos posts planifiés, publiés et échoués dans une seule liste.
 
-Fonctionne avec votre session Skool : aucun mot de passe. Essai gratuit inclus.
+L'extension fonctionne avec votre session Skool existante. Pas de mot de passe, pas de deuxième compte. Essai gratuit puis abonnement.
 
-Confidentialité : l'extension lit uniquement votre cookie Skool pour publier en votre nom, stocke les réglages localement et ne communique qu'avec notre API (api.skapi.pro). Sans publicité ni traqueurs.
+Côté vie privée : l'extension lit votre cookie de session Skool pour publier en votre nom, garde vos réglages dans le navigateur et ne parle qu'à notre serveur api.skapi.pro. Pas de pub, pas de trackers, pas de revente de données.
 
 ### it — Italiano
-**Name:** SKapi Magic Writer
-**Short:** Scrivi e programma i post su Skool con IA, GIF e calendario — direttamente nella tua community.
+**Name:** Skool Magic Writer
+**Short:** Scrivi post per Skool con un aiuto dall'IA, allega GIF e pubblicali quando vuoi. Tutto dentro skool.com.
 **Detailed:**
-SKapi Magic Writer porta un assistente di scrittura IA e un pianificatore di post direttamente in skool.com — senza cambiare scheda.
+Skool Magic Writer aggiunge due piccoli pulsanti accanto alla casella dove già scrivi su skool.com. Tutto succede lì, dove di solito lavori.
 
-✨ POST MAGICO — descrivi la tua idea in qualsiasi lingua, ottieni un post pronto con titolo e paragrafi.
-📅 PROGRAMMA — scegli data e ora (o preset rapidi come «Domani 9:00») — il post viene pubblicato in automatico, come te.
-🎬 GIF — allega una GIF, esce insieme al post.
-🔔 Notifiche — notifica di sistema con link quando il post programmato va online.
-🗂 Gestione — popup con tutti i post programmati, pubblicati e non riusciti.
+✨ Magic Post: descrivi la tua idea in un paio di parole, in qualsiasi lingua, e ottieni una bozza con titolo e paragrafi. Sistemi e pubblichi.
+📅 Programma: scegli data e ora (ci sono preset rapidi come «Domani 9:00») e il post esce da solo, dal tuo account.
+🎬 GIF: alleghane una e viene pubblicata insieme al post.
+🔔 Quando un post programmato va online ricevi una normale notifica di sistema con il link.
+🗂 Il pulsante calendario in alto tiene tutti i post programmati, pubblicati e non riusciti in un'unica lista.
 
-Funziona con la tua sessione Skool: nessuna password. Prova gratuita inclusa.
+L'estensione usa la sessione Skool a cui sei già collegato. Niente password, niente secondo account. C'è una prova gratuita, poi un abbonamento.
 
-Privacy: l'estensione legge solo il cookie Skool per pubblicare per conto tuo, salva le impostazioni in locale e parla solo con la nostra API (api.skapi.pro). Niente pubblicità né tracker.
+Sulla privacy: l'estensione legge il cookie di sessione Skool per pubblicare per conto tuo, salva le impostazioni nel browser e parla solo con il nostro server api.skapi.pro. Niente pubblicità, niente tracker, nessuna vendita di dati.
 
 ### pt_BR — Português (Brasil)
-**Name:** SKapi Magic Writer
-**Short:** Escreva e agende posts no Skool com IA, GIFs e calendário — direto na sua comunidade.
+**Name:** Skool Magic Writer
+**Short:** Escreva posts para o Skool com ajuda de IA, anexe GIFs e publique quando quiser. Tudo dentro do skool.com.
 **Detailed:**
-O SKapi Magic Writer traz um assistente de escrita com IA e um agendador de posts direto no skool.com — sem trocar de aba.
+O Skool Magic Writer coloca dois botões pequenos ao lado da caixa onde você já escreve no skool.com. Tudo acontece ali mesmo, no seu fluxo de sempre.
 
-✨ POST MÁGICO — descreva sua ideia em qualquer idioma e receba um post pronto com título e parágrafos.
-📅 AGENDAR — escolha data e hora (ou presets rápidos como «Amanhã 9:00») — o post é publicado automaticamente, como você.
-🎬 GIFs — anexe um GIF e ele sai junto com o post.
-🔔 Notificações — notificação do sistema com link quando o post agendado for publicado.
-🗂 Gerenciador — popup com todos os posts agendados, publicados e com falha.
+✨ Magic Post: descreva sua ideia em algumas palavras, em qualquer idioma, e receba um rascunho com título e parágrafos. Ajusta e publica.
+📅 Agendar: escolha data e hora (tem presets rápidos como «Amanhã 9:00») e o post sai sozinho, da sua conta.
+🎬 GIFs: anexe um e ele vai junto com o post.
+🔔 Quando um post agendado é publicado você recebe uma notificação normal do sistema com o link.
+🗂 O botão de calendário no topo guarda todos os posts agendados, publicados e que falharam numa lista só.
 
-Funciona com a sua própria sessão do Skool: sem senhas. Teste grátis incluído.
+A extensão funciona com a sessão do Skool em que você já está. Sem senhas, sem conta nova. Tem teste grátis e depois assinatura.
 
-Privacidade: a extensão lê apenas o cookie do Skool para publicar em seu nome, guarda as configurações localmente e fala só com a nossa API (api.skapi.pro). Sem anúncios nem rastreadores.
+Sobre privacidade: a extensão lê o cookie de sessão do Skool para publicar em seu nome, guarda as configurações no navegador e conversa apenas com o nosso servidor api.skapi.pro. Sem anúncios, sem rastreadores, não vendemos dados.
 
 ### pl — Polski
-**Name:** SKapi Magic Writer
-**Short:** Pisz i planuj posty w Skool z AI, GIF-ami i kalendarzem — bezpośrednio w Twojej społeczności.
+**Name:** Skool Magic Writer
+**Short:** Pisz posty do Skool z pomocą AI, dodawaj GIF-y i publikuj, kiedy chcesz. Wszystko w skool.com.
 **Detailed:**
-SKapi Magic Writer dodaje asystenta pisania AI i planer postów bezpośrednio w skool.com — bez przełączania kart.
+Skool Magic Writer dodaje dwa małe przyciski obok pola, w którym już piszesz na skool.com. Wszystko dzieje się na miejscu, w twoim normalnym rytmie pracy.
 
-✨ MAGICZNY POST — opisz swój pomysł w dowolnym języku, otrzymasz gotowy post z tytułem i akapitami.
-📅 HARMONOGRAM — wybierz datę i godzinę (lub szybkie presety, np. „Jutro 9:00”) — post opublikuje się automatycznie jako Ty.
-🎬 GIF-y — dodaj GIF-a, opublikuje się razem z postem.
-🔔 Powiadomienia — powiadomienie systemowe z linkiem, gdy zaplanowany post wyjdzie.
-🗂 Menedżer — popup ze wszystkimi zaplanowanymi, opublikowanymi i nieudanymi postami.
+✨ Magic Post: opisz pomysł kilkoma słowami, w dowolnym języku, a dostaniesz szkic z tytułem i akapitami. Poprawiłeś i opublikowałeś.
+📅 Harmonogram: wybierz datę i godzinę (są szybkie presety, np. „Jutro 9:00”), a post opublikuje się sam, z twojego konta.
+🎬 GIF-y: dodaj jeden, opublikuje się razem z postem.
+🔔 Gdy zaplanowany post wyjdzie, dostajesz zwykłe powiadomienie systemowe z linkiem.
+🗂 Przycisk kalendarza na górze trzyma wszystkie zaplanowane, opublikowane i nieudane posty w jednej liście.
 
-Działa na Twojej sesji Skool: bez haseł. Darmowy okres próbny w zestawie.
+Rozszerzenie działa na twojej bieżącej sesji Skool. Bez haseł i drugiego konta. Jest darmowy okres próbny, potem subskrypcja.
 
-Prywatność: rozszerzenie czyta tylko ciasteczko Skool, żeby publikować w Twoim imieniu, zapisuje ustawienia lokalnie i łączy się wyłącznie z naszym API (api.skapi.pro). Bez reklam i trackerów.
+Prywatność: rozszerzenie czyta ciasteczko sesji Skool, żeby publikować w twoim imieniu, zapisuje ustawienia w przeglądarce i rozmawia wyłącznie z naszym serwerem api.skapi.pro. Bez reklam, bez trackerów, nie sprzedajemy danych.
 
 ### tr — Türkçe
-**Name:** SKapi Magic Writer
-**Short:** Skool gönderilerini yapay zekâ, GIF ve takvimle yazın ve planlayın — topluluğunuzun içinde.
+**Name:** Skool Magic Writer
+**Short:** Skool için yapay zekâ desteğiyle gönderiler yazın, GIF ekleyin ve zamanlayın. Hepsi skool.com içinde.
 **Detailed:**
-SKapi Magic Writer, skool.com içine bir yapay zekâ yazma asistanı ve gönderi planlayıcı ekler — sekme değiştirmeye gerek yok.
+Skool Magic Writer, skool.com'da zaten yazı yazdığınız kutunun yanına iki küçük düğme ekler. Her şey orada, alıştığınız yerde olur.
 
-✨ SİHİRLİ GÖNDERİ — fikrinizi herhangi bir dilde anlatın, başlığı ve paragrafları hazır bir gönderi alın.
-📅 PLANLA — tarih ve saat seçin (ya da «Yarın 9:00» gibi hızlı ön ayarlar kullanın) — gönderi sizin adınıza otomatik yayınlanır.
-🎬 GIF — bir GIF ekleyin, gönderiyle birlikte çıkar.
-🔔 Bildirimler — planlanan gönderi yayınlandığında bağlantılı sistem bildirimi.
-🗂 Yönetici — planlanan, yayınlanan ve başarısız tüm gönderilerin listelendiği pencere.
+✨ Magic Post: fikrinizi birkaç kelimeyle, istediğiniz dilde anlatın; başlığı ve paragrafları hazır bir taslak alın. Düzeltin, yayınlayın.
+📅 Zamanla: tarih ve saat seçin («Yarın 9:00» gibi hızlı ön ayarlar var), gönderi kendi hesabınızdan kendiliğinden çıkar.
+🎬 GIF: bir tane ekleyin, gönderiyle birlikte yayınlanır.
+🔔 Zamanlanmış gönderi yayınlandığında bağlantılı normal bir sistem bildirimi alırsınız.
+🗂 Üstteki takvim düğmesi tüm zamanlanmış, yayınlanmış ve başarısız gönderileri tek listede tutar.
 
-Kendi Skool oturumunuzla çalışır: şifre yok. Ücretsiz deneme dahil.
+Uzantı, içinde zaten oturum açık olan Skool hesabınızla çalışır. Şifre yok, ikinci hesap yok. Ücretsiz deneme var, sonrasında abonelik.
 
-Gizlilik: uzantı yalnızca sizin adınıza yayınlamak için Skool çerezini okur, ayarları yerel olarak saklar ve yalnızca API'mizle (api.skapi.pro) konuşur. Reklam ve izleyici yok.
+Gizlilik hakkında: uzantı sizin adınıza yayınlayabilmek için Skool oturum çerezinizi okur, ayarları tarayıcınızda saklar ve yalnızca kendi sunucumuz api.skapi.pro ile konuşur. Reklam yok, izleyici yok, veri satışı yok.
 
 ### nl — Nederlands
-**Name:** SKapi Magic Writer
-**Short:** Schrijf en plan Skool-posts met AI, GIF's en een kalender — direct binnen je community.
+**Name:** Skool Magic Writer
+**Short:** Schrijf Skool-posts met een beetje hulp van AI, voeg GIF's toe en plan ze voor later. Alles in skool.com.
 **Detailed:**
-SKapi Magic Writer voegt een AI-schrijfassistent en een postplanner rechtstreeks toe aan skool.com — zonder tabbladen te wisselen.
+Skool Magic Writer zet twee kleine knoppen naast het veld waar je op skool.com toch al schrijft. Alles gebeurt daar, in je gewone werkstroom.
 
-✨ MAGISCHE POST — beschrijf je idee in elke taal en ontvang een kant-en-klare post met titel en alinea's.
-📅 PLANNEN — kies datum en tijd (of snelle presets zoals «Morgen 9:00») — de post wordt automatisch gepubliceerd, als jij.
-🎬 GIF's — voeg een GIF toe, deze gaat mee met de post.
-🔔 Meldingen — systeemmelding met link zodra je geplande post live is.
-🗂 Beheer — een popup met al je geplande, gepubliceerde en mislukte posts.
+✨ Magic Post: omschrijf je idee in een paar woorden, in elke taal, en je krijgt een concept met titel en alinea's. Even bijwerken en plaatsen.
+📅 Plannen: kies datum en tijd (snelle presets zoals «Morgen 9:00» zitten erbij) en de post gaat vanzelf de lucht in, vanaf jouw account.
+🎬 GIF's: voeg er een toe, die wordt samen met de post gepubliceerd.
+🔔 Als een geplande post live is, krijg je een normale systeemmelding met link.
+🗂 De kalenderknop bovenaan houdt al je geplande, gepubliceerde en mislukte posts in één lijst bij.
 
-Werkt met je eigen Skool-sessie: geen wachtwoorden. Gratis proefperiode inbegrepen.
+De extensie werkt met de Skool-sessie waarin je al ingelogd bent. Geen wachtwoorden, geen tweede account. Er is een gratis proefperiode, daarna een abonnement.
 
-Privacy: de extensie leest alleen je Skool-cookie om in jouw naam te publiceren, slaat instellingen lokaal op en spreekt alleen met onze API (api.skapi.pro). Geen advertenties of trackers.
+Over privacy: de extensie leest je Skool-sessiecookie om in jouw naam te publiceren, bewaart instellingen in je browser en spreekt alleen met onze eigen server api.skapi.pro. Geen advertenties, geen trackers, geen gegevensverkoop.
 
 ---
 
-## Privacy policy (заготовка для skapi.pro/privacy)
+## Privacy policy (заготовка для страницы на skapi.pro)
 
-SKapi Magic Writer stores your settings locally in your browser. To publish scheduled posts on your behalf, it reads your Skool `auth_token` session cookie and sends it only to our own API (api.skapi.pro) over HTTPS. We do not sell your data, do not use it for advertising, and do not share it with third parties. Scheduled post content is stored on our servers only to publish it at your chosen time and can be deleted by you at any time via the extension. Contact: [твой email].
+Skool Magic Writer stores your settings locally in your browser. To publish scheduled posts on your behalf, it reads your Skool auth_token session cookie and sends it only to our own API at api.skapi.pro over HTTPS. We do not sell your data, do not use it for advertising and do not share it with third parties. Scheduled post content is stored on our servers only so it can be published at the time you chose, and you can delete it at any time from the extension. Questions: [твой email].

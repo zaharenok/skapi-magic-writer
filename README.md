@@ -1,4 +1,4 @@
-# SKapi Magic Writer
+# Skool Magic Writer
 
 Experimental sub-project: a minimal Chrome extension that lives **entirely inside Skool** (no popup). It adds two buttons next to the composer and a calendar icon in the top bar.
 
@@ -8,7 +8,7 @@ Experimental sub-project: a minimal Chrome extension that lives **entirely insid
 
 - **✨ Magic Post** — AI turns your raw notes into a ready-to-post community message (title + body), then drops it into the open Skool composer. You review and press Post yourself.
 - **📚 Community context (Pro)** — checkbox in the Magic Post dialog: scrapes the last 10/20/30 posts from the feed (client-side, the posts are already in the DOM) and sends them as style context, so the generated post sounds native to that community. Only unlocked for subscribed users (`GET /ai/access`); the server enforces it too (`pro_feature_required`).
-- **📅 Schedule** — save a post to the SKapi scheduler; the server publishes it automatically at the chosen time.
+- **📅 Schedule** — save a post to the scheduler; the server publishes it automatically at the chosen time.
 - **📅 calendar icon** (top bar) — a popover listing upcoming / sent / failed scheduled posts. Click a pending one to edit.
 
 The buttons appear next to **"Write something"** / **"Go Live"** in the composer, and the calendar icon sits in the header next to messages/notifications.

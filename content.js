@@ -1,5 +1,5 @@
 /**
- * SKapi Magic Writer — content script (experimental, v0.1)
+ * Skool Magic Writer — content script (experimental, v0.1)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -1110,7 +1110,7 @@ function ding() {
 function notifyPublished(post) {
   const what = (post.title || (post.content || '').split('\n')[0] || 'Your post').slice(0, 90);
   try { toast(`✅ Published: ${what}`); } catch (_) {}
-  try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: 'SKapi Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
+  try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: 'Skool Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
   ding();
 }
 function gifTermFrom(text) {
@@ -1502,7 +1502,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [SKapi Magic Writer] loaded — v0.5.0');
+  console.log('✨ [Skool Magic Writer] loaded — v0.5.0');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

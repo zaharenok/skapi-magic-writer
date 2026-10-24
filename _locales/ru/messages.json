@@ -1,4 +1,4 @@
 {
-  "extName": { "message": "SKapi Magic Writer" },
-  "extDesc": { "message": "Пишите и откладывайте посты в Skool с ИИ, GIF и календарём — прямо внутри вашего сообщества." }
+  "extName": { "message": "Skool Magic Writer" },
+  "extDesc": { "message": "Пишите посты для Skool с помощью ИИ, прикрепляйте GIF и откладывайте публикацию. Всё внутри skool.com." }
 }

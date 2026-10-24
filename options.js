@@ -1,4 +1,4 @@
-// SKapi Magic Writer — options page (slug only; JWT is auto from cookie)
+// Skool Magic Writer — options page (slug only; JWT is auto from cookie)
 
 const $slug = document.getElementById('slug');
 const $status = document.getElementById('status');
