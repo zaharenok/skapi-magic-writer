@@ -456,7 +456,7 @@ function injectStyles() {
     .skmw-cd{font-weight:700;color:#7c3aed;white-space:nowrap;}
     .skmw-x{background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px;float:right;}
     .skmw-x:hover{color:#dc2626;}
-    .skmw-ac{display:inline-flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:#6b7280;margin-right:8px;white-space:nowrap;}
+    .skmw-ac{display:inline-flex;align-items:center;gap:3px;font-size:12px;cursor:pointer;color:#6b7280;margin-right:14px;white-space:nowrap;}
     .skmw-ac input{margin:0;cursor:pointer;}
     .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
     .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${INK};color:#fff;padding:12px 22px;border-radius:12px;border:2px solid ${INK};font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
@@ -1237,9 +1237,14 @@ function makeDraggable(pop, storageKey) {
 let _autocleanRunning = false;
 async function autoCleanSent(notify) {
   if (_autocleanRunning) return;
-  const stale = calState.posts.filter((p) => (p.status || '') === 'published' &&
+  // Keep the 5 newest Sent posts (and anything younger than a week);
+  // everything beyond that gets deleted.
+  const pubs = calState.posts
+    .filter((p) => (p.status || '') === 'published')
+    .sort((a, b) => new Date(b.published_at || b.scheduled_for) - new Date(a.published_at || a.scheduled_for));
+  const stale = pubs.filter((p, i) => i >= 5 ||
     new Date(p.published_at || p.scheduled_for).getTime() < Date.now() - 7 * 24 * 3600 * 1000);
-  if (!stale.length) { if (notify) toast('🧹 Nothing to clean'); return; }
+  if (!stale.length) { if (notify) toast('🧹 Nothing to clean (keeping 5 newest sent)'); return; }
   _autocleanRunning = true;
   let n = 0;
   for (const p of stale) {
@@ -1274,7 +1279,7 @@ function mountPop(pop) {
 function renderCalendar() {
   document.querySelector('.skmw-pop')?.remove();
   const pop = el(`<div class="skmw-pop">
-    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><span style="display:inline-flex;align-items:center;"><label class="skmw-ac" title="Auto-delete Sent posts older than 7 days"><input type="checkbox" id="skmw-ac">🧹</label><button class="skmw-pop-x">✕</button></span></div>
+    <div class="skmw-pop-h"><h3>📅 Scheduled posts</h3><span style="display:inline-flex;align-items:center;"><label class="skmw-ac" title="Keep only the 5 newest Sent posts (and none older than 7 days)"><input type="checkbox" id="skmw-ac">🧹</label><button class="skmw-pop-x">✕</button></span></div>
     <div class="skmw-tabs">
       <div class="skmw-tab" data-tab="upcoming">Upcoming</div>
       <div class="skmw-tab" data-tab="published">Sent</div>
