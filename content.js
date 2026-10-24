@@ -407,7 +407,7 @@ function injectStyles() {
     .skmw-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:${BRAND};color:${INK};border:2px solid ${INK};border-radius:10px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-left:8px;line-height:1;transition:transform .12s,box-shadow .12s;}
     .skmw-btn:hover{transform:translateY(-1px);box-shadow:0 3px 0 rgba(0,0,0,.12);}
     .skmw-btn:active{transform:translateY(1px);}
-    .skmw-scheduled{position:relative;}
+    .skmw-scheduled{position:relative;background:#FFC900;}
     .skmw-scheduled .b{position:absolute;top:-6px;right:-6px;background:${INK};color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 3px;border-radius:8px;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;}
     .skmw-scheduled .b.zero{display:none;}
     .skmw-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2147483000;display:flex;justify-content:center;padding:24px 16px;overflow:auto;}
