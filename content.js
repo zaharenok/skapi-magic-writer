@@ -1321,7 +1321,7 @@ function renderList() {
   };
   const items = calState.posts.filter(byTab).sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
   if (!items.length) {
-    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">✨ Click here to see magic</button></div>`;
+    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">🪄 Click here to see the magic</button></div>`;
     list.querySelector('.skmw-empty-magic')?.addEventListener('click', (e) => {
       e.stopPropagation();
       document.querySelector('.skmw-pop')?.remove();
