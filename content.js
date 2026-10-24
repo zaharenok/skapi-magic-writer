@@ -487,10 +487,10 @@ function injectStyles() {
     /* Wide schedule modal: two columns so it grows horizontally, not vertically */
     .skmw-modal-wide{max-width:780px;}
     .skmw-sched-cols{display:flex;gap:22px;align-items:flex-start;}
-    .skmw-sched-left{flex:1.15;min-width:0;display:flex;flex-direction:column;gap:6px;}
+    .skmw-sched-left{flex:1.7;min-width:0;display:flex;flex-direction:column;gap:6px;}
     .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
     .skmw-sched-left>label>span{margin-left:4px;font-weight:400;color:#9ca3af;text-transform:none;}
-    .skmw-sched-left>textarea{width:100%;box-sizing:border-box;min-height:80px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
+    .skmw-sched-left>textarea{width:100%;box-sizing:border-box;min-height:200px;padding:10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;line-height:1.5;color:#0A0A0A;background:#fff;margin-top:4px;resize:vertical;overflow:auto;}
     .skmw-sched-right{flex:1;min-width:0;border-left:1.5px solid #f3f4f6;padding-left:20px;}
     .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
     .skmw-sched-right h4:not(:first-child){margin-top:16px;}
@@ -503,7 +503,7 @@ function injectStyles() {
     .skmw-btn-back:hover{background:#f3f4f6;color:${INK};}
     .skmw-edit-header h3{margin:0;font-size:15px;color:#0A0A0A;flex:1;}
     .skmw-edit-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1.5px solid #f3f4f6;}
-    @media (max-width:680px){.skmw-sched-cols{flex-direction:column;}.skmw-sched-right{border-left:none;border-top:1.5px solid #f3f4f6;padding-left:0;padding-top:16px;}}
+    @media (max-width:680px){.skmw-sched-cols{flex-direction:column;align-items:stretch;}.skmw-sched-left,.skmw-sched-right{width:100%;}.skmw-sched-right{border-left:none;border-top:1.5px solid #f3f4f6;padding-left:0;padding-top:16px;}}
   `;
   const style = el(`<style id="skmw-styles">${css}</style>`);
   document.head.appendChild(style);
@@ -915,15 +915,14 @@ async function openScheduleDialog(post = null, prefillText = null) {
       <div class="skmw-sched-left">
         <label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">
         <label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
-        <label style="margin-top:14px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
-        <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
-        <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out (system notification + sound)</label>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
         <div class="skmw-presets" id="skmw-s-presets"></div>
-      </div>
+        <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
+        <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+        <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
+        <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-s-cancel">Cancel</button>
