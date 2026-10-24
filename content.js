@@ -459,6 +459,7 @@ function injectStyles() {
     .skmw-ac{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:#6b7280;margin-right:14px;white-space:nowrap;font-weight:600;}
     .skmw-ac input{margin:0;cursor:pointer;}
     .skmw-empty{padding:30px 14px;text-align:center;color:#9ca3af;font-size:13px;}
+    .skmw-empty .skmw-btn{margin-top:14px;}
     .skmw-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:${INK};color:#fff;padding:12px 22px;border-radius:12px;border:2px solid ${INK};font-weight:700;font-size:14px;z-index:2147483010;box-shadow:0 4px 0 rgba(0,0,0,.15);font-family:ui-sans-serif,system-ui,sans-serif;}
     /* Compact Schedule button that fits inside Skool's composer button row */
     .skmw-s-inline{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin:0 6px;line-height:1;transition:background .12s,border-color .12s;}
@@ -1315,7 +1316,12 @@ function renderList() {
   };
   const items = calState.posts.filter(byTab).sort((a, b) => new Date(a.scheduled_for) - new Date(b.scheduled_for));
   if (!items.length) {
-    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.</div>`;
+    list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">✨ Magic post</button></div>`;
+    list.querySelector('.skmw-empty-magic')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelector('.skmw-pop')?.remove();
+      openMagicDialog();
+    });
     return;
   }
   list.innerHTML = items.map((p) => {
