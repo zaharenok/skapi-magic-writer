@@ -159,13 +159,22 @@ async function closeComposer() {
 // ---------------------------------------------------------------------------
 // Set once when the extension context dies (reload/update while tabs are
 // open). Every chrome.* call then throws "Extension context invalidated"
-// synchronously — we must stop retrying and warn the user exactly once.
+// synchronously — we must stop retrying, reload the tab once, then warn.
 let _contextLost = false;
 function handleContextLost() {
   if (_contextLost) return true;
   _contextLost = true;
-  console.error('[skmw] Extension context invalidated — reload Skool tabs');
-  toast('⚠️ Extension reloaded — please close all Skool tabs and reopen them');
+  console.error('[skmw] Extension context invalidated — reloading tab');
+  toast('⚠️ Extension was updated — reopening this tab…');
+  // Self-heal: reload exactly once per tab lifetime. sessionStorage survives
+  // the reload but dies with the tab, so a reload loop is impossible; a
+  // second context loss in the same tab only shows the toast.
+  try {
+    if (!sessionStorage.getItem('skmw_ctx_reloaded')) {
+      sessionStorage.setItem('skmw_ctx_reloaded', '1');
+      setTimeout(() => location.reload(), 1500);
+    }
+  } catch (_) { /* sessionStorage unavailable — the toast stays as guidance */ }
   return true;
 }
 
@@ -745,12 +754,15 @@ async function openScheduleDialog(post = null, prefillText = null) {
     ? escapeHtml(content.slice(0, 280)) + (content.length > 280 ? '…' : '')
     : '<span class="skmw-preview-empty">Nothing in the composer yet — write your post first.</span>';
   const minDt = toDtLocal(new Date());
+  // Capture the composer GIF once, before the dialog can close the composer —
+  // the save handler reuses this snapshot instead of re-querying the DOM.
+  const composerGif = isEdit ? null : findComposerGif();
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
-    ${!isEdit ? '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Important:</strong> Only text content is saved. If you added images/media in the composer, they won\'t be included in the scheduled post — you\'ll need to re-add them when it publishes.</div>' : ''}
+    ${!isEdit ? (composerGif ? '<div class="skmw-notice" style="background:#DCFCE7;border:1.5px solid #16A34A;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#166534;"><strong>🎬 GIF will be saved:</strong> the GIF from the composer is stored with the scheduled post and re-attached when it publishes (a matching GIF search is kept as backup).</div>' : '<div class="skmw-notice" style="background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#92400E;"><strong>⚠️ Heads-up:</strong> only a GIF from Skool\'s GIF picker is saved. Uploaded images or videos in the composer won\'t be included in the scheduled post.</div>') : ''}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         ${isEdit
@@ -865,12 +877,11 @@ async function openScheduleDialog(post = null, prefillText = null) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      // Remember the GIF so the publisher can re-attach the SAME one:
-      // - exact image URL if a GIF is in the composer (or was saved on the post)
-      // - plus a search term as fallback (reused from the instant-insert logic)
-      const gifUrl = isEdit ? (post?.media_url || null) : findComposerGif();
-      const wantGif = document.getElementById('skmw-magic-gif').checked;
-      const gifSearch = (wantGif || gifUrl) ? gifTermFrom(finalContent) : null;
+      // GIF: URL captured when the dialog opened (the composer may be closed
+      // by the time this runs) or the URL saved on the post when editing.
+      // The search term is stored only as the publisher's fallback.
+      const gifUrl = isEdit ? (post?.media_url || null) : composerGif;
+      const gifSearch = gifUrl ? gifTermFrom(finalContent) : null;
       const body = { content: finalContent, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl };
       if (isEdit && post?.id) await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
