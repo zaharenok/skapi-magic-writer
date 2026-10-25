@@ -519,6 +519,7 @@ function injectStyles() {
     .skmw-addlink:hover{border-color:${BRAND};color:${BRAND};}
     .skmw-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
     .skmw-modal label.skmw-row{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;line-height:1.2;margin:0;}
+    .skmw-pop label.skmw-row{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;line-height:1.2;}
     .skmw-when-row{display:flex;gap:14px;align-items:center;margin-top:14px;}
     .skmw-when-left{width:225px;flex-shrink:0;}
     .skmw-when-left label{margin:0 0 4px;}
@@ -1897,7 +1898,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.24');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.25');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
