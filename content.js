@@ -504,6 +504,8 @@ function injectStyles() {
     /* Cap the popup height: ~7 items, then internal scroll — the panel must
        not grow into a wall of Sent posts (2026-10-25). */
     .skmw-pop:not(.editing) #skmw-list{max-height:455px;overflow-y:auto;}
+    .skmw-scroll-hint{position:sticky;bottom:2px;display:none;justify-content:center;pointer-events:none;margin-top:-10px;}
+    .skmw-scroll-hint span{background:rgba(243,244,246,.8);backdrop-filter:blur(2px);border:1px solid #e5e7eb;border-radius:999px;padding:2px 12px;font-size:12px;font-weight:800;color:#6b7280;box-shadow:0 -6px 10px -6px rgba(0,0,0,.18);}
     .skmw-pop.editing textarea{min-height:280px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -667,9 +669,9 @@ async function openMagicDialog() {
     <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap" title="🔒 Pro feature — requires an active subscription">
       <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
       <select id="skmw-ctx-count" class="skmw-ctx-count">
-        <option value="10">10 posts</option>
+        <option value="10" selected>10 posts</option>
         <option value="20">20 posts</option>
-        <option value="30" selected>30 posts</option>
+        <option value="30">30 posts</option>
       </select>
     </label>
     <div class="skmw-actions">
@@ -743,7 +745,7 @@ async function openMagicDialog() {
       let communityContext = '';
       const wantContext = document.getElementById('skmw-ctx').checked;
       if (wantContext) {
-        const maxPosts = parseInt(document.getElementById('skmw-ctx-count').value || '30', 10);
+        const maxPosts = parseInt(document.getElementById('skmw-ctx-count').value || '10', 10);
         if (loadingText) loadingText.textContent = '📚 Collecting recent community posts...';
         communityContext = await collectCommunityContext(maxPosts);
         if (loadingText) loadingText.textContent = '✨ Generating your post...';
@@ -1645,6 +1647,20 @@ function renderList() {
     </div>`;
   }).join('');
 
+  // Semi-transparent "more below" hint: shown while the capped list
+  // (~7 items) actually overflows and the user hasn't reached the bottom.
+  const hint = document.createElement('div');
+  hint.className = 'skmw-scroll-hint';
+  hint.innerHTML = '<span>↓</span>';
+  list.appendChild(hint);
+  const syncHint = () => {
+    const more = list.scrollHeight > list.clientHeight + 4
+      && list.scrollTop + list.clientHeight < list.scrollHeight - 6;
+    hint.style.display = more ? 'flex' : 'none';
+  };
+  list.onscroll = syncHint;
+  requestAnimationFrame(syncHint);
+
   // Live countdown on every pending row
   const tickCd = () => {
     if (!list.isConnected) { clearInterval(list._cdTimer); return; }
@@ -1823,7 +1839,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.5');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.6');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
