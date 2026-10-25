@@ -1124,14 +1124,16 @@ async function openScheduleDialog(post = null, prefillText = null) {
         ? gifTermFrom(finalContent)
         : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
       // Attachments + links: images dropped in the composer are captured from
-      // the attachments root; GIF already rides media_url (excluded); Links
-      // textarea lines (embed or file URLs) ride along; videos expose no DOM
-      // URL (Mux) — hint the user instead of silently dropping theirs.
+      // the attachments root; GIF already rides media_url (excluded); video
+      // links added via the composer's native "Add video" are auto-captured
+      // (intercepted input, trimmed to the live video cards); Links textarea
+      // lines (embed or file URLs) ride along as before.
       const captured = captureComposerMediaUrls(gifUrl);
+      const autoVideoLinks = captured.videoLinks || [];
       const linkLines = ((document.getElementById('skmw-s-links')?.value) || '')
         .split('\n').map((s) => s.trim()).filter(Boolean);
-      const mediaUrls = [...new Set([...captured.urls, ...linkLines])];
-      if (!isEdit && captured.hasVideo && !linkLines.some((u) => /\.(mp4|webm|mov|avi|mkv)([?#]|$)/i.test(u))) {
+      const mediaUrls = [...new Set([...captured.urls, ...autoVideoLinks, ...linkLines])];
+      if (!isEdit && captured.hasVideo && !autoVideoLinks.length && !linkLines.some((u) => /\.(mp4|webm|mov|avi|mkv)([?#]|$)/i.test(u))) {
         toast('⚠️ video: paste its URL in Links');
       }
       let emailMembers = !!document.getElementById('skmw-s-email')?.checked;
@@ -1226,6 +1228,10 @@ function gifTermFrom(text) {
   const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
   return words.find((w) => !stop.has(w)) || 'success';
 }
+// Видео-ссылки, введённые через нативный Add video (карточка
+// .skool-video-attachment не содержит URL в DOM — перехватываем ввод).
+const composerVideoLinks = [];
+
 // Find the media currently inserted in the Skool composer, if any. Returns
 // the asset URL so the scheduled publisher can re-attach the exact same GIF.
 // Native picker picks land as re-hosted imgs (assets.skool.com, no .gif
@@ -1250,6 +1256,22 @@ function findComposerGif() {
     }
   }
   return null;
+}
+
+// One document-level capture-phase listener for the SPA lifetime. The video
+// dialog only exists while open — #destination is the scope condition — and
+// capture runs before the React handlers that close the dialog.
+function startVideoLinkCapture() {
+  document.addEventListener('click', (e) => {
+    const input = document.querySelector('#destination, [data-testid="post-video-input"]');
+    if (!input) return;
+    const btn = e.target.closest('button');
+    if (!btn || (btn.textContent || '').trim() !== 'Add') return;
+    const v = (input.value || '').trim();
+    if (/^https?:\/\//i.test(v) && composerVideoLinks[composerVideoLinks.length - 1] !== v) {
+      composerVideoLinks.push(v);
+    }
+  }, true);
 }
 
 // Month-grid calendar widget shared by the schedule dialog and the edit form
@@ -1304,8 +1326,10 @@ function mountCalendar(container, getChosen, setChosen) {
 // Files the user attached in the Skool composer (images land in the
 // attachments root OUTSIDE the TipTap doc with assets.skool.com srcs; GIFs
 // picked via 🎬 already ride media_url — pass them as excludeUrl to avoid
-// double-attaching). Videos go through Skool's Mux pipeline and expose no
-// URL in the DOM (recon 2026-10-25) — the caller toasts a hint instead.
+// double-attaching). Video-by-link carries no URL in the DOM either —
+// startVideoLinkCapture intercepts the input; videoLinks are trimmed to the
+// number of video cards so links typed for an earlier post in the same SPA
+// session can't leak into this one.
 function captureComposerMediaUrls(excludeUrl) {
   const urls = new Set();
   document.querySelectorAll('.skool-attachments-root img').forEach((img) => {
@@ -1313,8 +1337,10 @@ function captureComposerMediaUrls(excludeUrl) {
     if (s.startsWith('https://assets.skool.com/')) urls.add(s);
   });
   if (excludeUrl) urls.delete(excludeUrl);
-  const hasVideo = !!document.querySelector('.skool-mux-attachment');
-  return { urls: [...urls], hasVideo };
+  const hasVideo = !!document.querySelector('.skool-mux-attachment, .skool-video-attachment');
+  const videoCards = document.querySelectorAll('.skool-attachments-root .skool-video-attachment').length;
+  const videoLinks = videoCards ? composerVideoLinks.slice(-videoCards) : [];
+  return { urls: [...urls], hasVideo, videoLinks };
 }
 
 // ---------------------------------------------------------------------------
@@ -1688,6 +1714,7 @@ async function init() {
   injectStyles();
   observe();
   startDiscardWatcher();
+  startVideoLinkCapture();
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
