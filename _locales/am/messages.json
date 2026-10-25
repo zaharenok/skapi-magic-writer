@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "በAI እገዛ የSkool ልጥፎችን ይጻፉ፣ GIF ያካትቱ እና ለወደፊት መለጠፍን ያቅዱ። ሁሉም በskool.com ውስጥ።" }
+  "extName": {
+    "message": "Skool Magic Writer — የAI ፖስቶች እና ፕሮግራም"
+  },
+  "extDesc": {
+    "message": "በAI እገዛ የSkool ልጥፎችን ይጻፉ፣ GIF ያካትቱ እና ለወደፊት መለጠፍን ያቅዱ። ሁሉም በskool.com ውስጥ።"
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: በskool.com ላይ የ✨ እና 📅 አዝራሮችን ይጠቀሙ",
+    "description": "Toolbar icon tooltip"
+  }
 }

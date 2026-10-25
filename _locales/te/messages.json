@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "AI సహాయంతో Skool పోస్ట్‌లు రాయండి, GIF జోడించి తర్వాత కోసం షెడ్యూల్ చేయండి. అన్నీ skool.com లోపే." }
+  "extName": {
+    "message": "Skool Magic Writer — AI పోస్ట్ & షెడ్యూలింగ్"
+  },
+  "extDesc": {
+    "message": "AI సహాయంతో Skool పోస్ట్‌లు రాయండి, GIF జోడించి తర్వాత కోసం షెడ్యూల్ చేయండి. అన్నీ skool.com లోపే."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: skool.comలో ✨, 📅 బటన్‌లను ఉపయోగించండి",
+    "description": "Toolbar icon tooltip"
+  }
 }

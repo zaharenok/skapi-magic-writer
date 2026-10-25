@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "AIの力を借りてSkoolの投稿を作成。GIFを添付して予約投稿も可能。すべてskool.com内で完結。" }
+  "extName": {
+    "message": "Skool Magic Writer — AI投稿＆予約投稿"
+  },
+  "extDesc": {
+    "message": "AIの力を借りてSkoolの投稿を作成。GIFを添付して予約投稿も可能。すべてskool.com内で完結。"
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: skool.comで✨と📅のボタンを使おう",
+    "description": "Toolbar icon tooltip"
+  }
 }

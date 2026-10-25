@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Kirjuta Skooli postitusi tehisintellekti abil, manusta GIF-e ja ajasta avaldamine hiljemaks. Kõik skool.comi sees." }
+  "extName": {
+    "message": "Skool Magic Writer — AI-postitused ja ajastus"
+  },
+  "extDesc": {
+    "message": "Kirjuta Skooli postitusi tehisintellekti abil, manusta GIF-e ja ajasta avaldamine hiljemaks. Kõik skool.comi sees."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: kasuta skool.comis nuppe ✨ ja 📅",
+    "description": "Toolbar icon tooltip"
+  }
 }

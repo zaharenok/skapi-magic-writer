@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Γράψτε αναρτήσεις στο Skool με τη βοήθεια AI, επισυνάψτε GIF και προγραμματίστε τη δημοσίευσή τους. Όλα μέσα στο skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — Αναρτήσεις με AI"
+  },
+  "extDesc": {
+    "message": "Γράψτε αναρτήσεις στο Skool με τη βοήθεια AI, επισυνάψτε GIF και προγραμματίστε τη δημοσίευσή τους. Όλα μέσα στο skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: χρησιμοποιήστε τα κουμπιά ✨ και 📅 στο skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

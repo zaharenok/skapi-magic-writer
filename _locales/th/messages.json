@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "เขียนโพสต์ Skool ด้วยความช่วยเหลือของ AI แนบ GIF และกำหนดเวลาโพสต์ล่วงหน้า ทั้งหมดภายใน skool.com" }
+  "extName": {
+    "message": "Skool Magic Writer — โพสต์ AI และจัดเวลาโพสต์"
+  },
+  "extDesc": {
+    "message": "เขียนโพสต์ Skool ด้วยความช่วยเหลือของ AI แนบ GIF และกำหนดเวลาโพสต์ล่วงหน้า ทั้งหมดภายใน skool.com"
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: ใช้ปุ่ม ✨ และ 📅 บน skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

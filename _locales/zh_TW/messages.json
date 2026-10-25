@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "藉助 AI 撰寫 Skool 貼文，附加 GIF 並排定稍後發布。全都在 skool.com 內完成。" }
+  "extName": {
+    "message": "Skool Magic Writer — AI 貼文與排程發佈"
+  },
+  "extDesc": {
+    "message": "藉助 AI 撰寫 Skool 貼文，附加 GIF 並排定稍後發布。全都在 skool.com 內完成。"
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer：在 skool.com 上使用 ✨ 和 📅 按鈕",
+    "description": "Toolbar icon tooltip"
+  }
 }

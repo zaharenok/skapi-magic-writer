@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Rakstiet Skool ierakstus ar AI palīdzību, pievienojiet GIF un ieplānojiet publicēšanu vēlākam laikam. Viss skool.com ietvaros." }
+  "extName": {
+    "message": "Skool Magic Writer — AI ieraksti un plānošana"
+  },
+  "extDesc": {
+    "message": "Rakstiet Skool ierakstus ar AI palīdzību, pievienojiet GIF un ieplānojiet publicēšanu vēlākam laikam. Viss skool.com ietvaros."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: izmantojiet pogas ✨ un 📅 vietnē skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

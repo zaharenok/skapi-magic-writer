@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Skool için yapay zekâ desteğiyle gönderiler yazın, GIF ekleyin ve zamanlayın. Hepsi skool.com içinde." }
+  "extName": {
+    "message": "Skool Magic Writer — Yapay zekâ ile gönderi"
+  },
+  "extDesc": {
+    "message": "Skool için yapay zekâ desteğiyle gönderiler yazın, GIF ekleyin ve zamanlayın. Hepsi skool.com içinde."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: skool.com'da ✨ ve 📅 düğmelerini kullanın",
+    "description": "Toolbar icon tooltip"
+  }
 }

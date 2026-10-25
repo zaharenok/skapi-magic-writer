@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "AI의 도움으로 Skool 게시물을 작성하고, GIF을 첨부하고, 예약 게시하세요. 모두 skool.com 안에서." }
+  "extName": {
+    "message": "Skool Magic Writer — AI 글쓰기 및 예약 게시"
+  },
+  "extDesc": {
+    "message": "AI의 도움으로 Skool 게시물을 작성하고, GIF을 첨부하고, 예약 게시하세요. 모두 skool.com 안에서."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: skool.com에서 ✨, 📅 버튼을 사용하세요",
+    "description": "Toolbar icon tooltip"
+  }
 }

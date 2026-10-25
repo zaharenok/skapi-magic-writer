@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Scrie postări pe Skool cu puțin ajutor de la AI, atașează GIF-uri și programează publicarea. Totul în interiorul skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — Postări AI și programare"
+  },
+  "extDesc": {
+    "message": "Scrie postări pe Skool cu puțin ajutor de la AI, atașează GIF-uri și programează publicarea. Totul în interiorul skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: folosește butoanele ✨ și 📅 pe skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

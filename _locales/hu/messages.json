@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Írjon Skool-bejegyzéseket AI-segéddel, csatoljon GIF-eket és ütemezze a közzétételt. Minden a skool.com oldalon belül." }
+  "extName": {
+    "message": "Skool Magic Writer — AI-posztok és ütemezés"
+  },
+  "extDesc": {
+    "message": "Írjon Skool-bejegyzéseket AI-segéddel, csatoljon GIF-eket és ütemezze a közzétételt. Minden a skool.com oldalon belül."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: használd a ✨ és 📅 gombokat a skool.com-on",
+    "description": "Toolbar icon tooltip"
+  }
 }

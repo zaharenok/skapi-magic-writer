@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Viết bài đăng Skool với sự hỗ trợ của AI, đính kèm GIF và lên lịch đăng sau. Tất cả ngay trong skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — Bài đăng AI và lên lịch"
+  },
+  "extDesc": {
+    "message": "Viết bài đăng Skool với sự hỗ trợ của AI, đính kèm GIF và lên lịch đăng sau. Tất cả ngay trong skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: dùng các nút ✨ và 📅 trên skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

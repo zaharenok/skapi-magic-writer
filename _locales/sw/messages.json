@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Andika machapisho ya Skool kwa msaada wa AI, ambatanisha GIF na upange kuchapisha baadaye. Yote ndani ya skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — Machapisho ya AI"
+  },
+  "extDesc": {
+    "message": "Andika machapisho ya Skool kwa msaada wa AI, ambatanisha GIF na upange kuchapisha baadaye. Yote ndani ya skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: tumia vitufe vya ✨ na 📅 kwenye skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

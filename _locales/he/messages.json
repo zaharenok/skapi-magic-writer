@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "כתבו פוסטים ב-Skool בעזרת AI, צרפו GIF ותזמנו פרסום למועד מאוחר יותר. הכול בתוך skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — פוסטים עם AI ותזמון"
+  },
+  "extDesc": {
+    "message": "כתבו פוסטים ב-Skool בעזרת AI, צרפו GIF ותזמנו פרסום למועד מאוחר יותר. הכול בתוך skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: השתמשו בכפתורים ✨ ו-📅 ב-skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }

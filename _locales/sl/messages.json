@@ -1,4 +1,12 @@
 {
-  "extName": { "message": "Skool Magic Writer" },
-  "extDesc": { "message": "Pišite objave v Skool s pomočjo UI, priložite GIF-je in razporedite objavo za kasneje. Vse znotraj skool.com." }
+  "extName": {
+    "message": "Skool Magic Writer — AI objave in načrtovanje"
+  },
+  "extDesc": {
+    "message": "Pišite objave v Skool s pomočjo UI, priložite GIF-je in razporedite objavo za kasneje. Vse znotraj skool.com."
+  },
+  "actionTitle": {
+    "message": "Skool Magic Writer: uporabite gumba ✨ in 📅 na skool.com",
+    "description": "Toolbar icon tooltip"
+  }
 }
