@@ -86,10 +86,17 @@
   .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
   .skmw-preset:hover{border-color:#FF90E8;color:#0A0A0A;}
   .skmw-preset.active{background:#FF90E8;border-color:#0A0A0A;color:#0A0A0A;}
-  .skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin-top:10px;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
+  .skmw-modal label.skmw-gif,.skmw-gif{display:flex;align-items:center;gap:8px;min-height:22px;line-height:1;margin:10px 0 0;font-size:13px;color:#374151;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0;}
   .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:#FF90E8;cursor:pointer;}
   .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
   .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
+  .skmw-trial{display:none;background:#FEF3C7;border:1.5px solid #F59E0B;color:#92400E;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600;margin:0 0 10px;}
+  .skmw-err{display:none;color:#dc2626;font-size:13px;font-weight:600;margin-top:10px;}
+  .skmw-loading{display:none;margin-top:14px;}
+  .skmw-progress{height:8px;border-radius:999px;background:#F3F4F6;overflow:hidden;}
+  .skmw-progress-bar{height:100%;width:40%;background:linear-gradient(90deg,#FF90E8,#7848D8);border-radius:999px;animation:skmw-slide 1.2s ease-in-out infinite;}
+  @keyframes skmw-slide{0%{margin-left:-40%}100%{margin-left:100%}}
+  .skmw-loading-text{font-size:13px;color:#6b7280;margin:8px 0 0;}
   /* Schedule modal: single column at every width (matches the approved design) */
   .skmw-modal-wide{max-width:680px;}
   .skmw-sched-cols{display:flex;flex-direction:column;gap:16px;}
@@ -120,6 +127,7 @@
   <span>SKMW edit-mock</span>
   <span class="hint">стенд для разбора формы редактирования — код один в один из content.js</span>
   <button onclick="openScheduleMock()">📅 Schedule post</button>
+  <button onclick="openMagicMock()">✨ Magic Post Writer</button>
   <button onclick="renderCalendar()">↺ Reopen popup</button>
 </div>
 
@@ -154,6 +162,41 @@ let calState = {
 };
 
 // ==== popup skeleton (renderCalendar verbatim minus chrome.*) ====
+function openMagicMock() {
+  document.querySelector('.skmw-overlay')?.remove();
+  const overlay = el(`<div class="skmw-overlay"></div>`);
+  const modal = el(`<div class="skmw-modal">
+    <h2>✨ Magic Post Writer</h2>
+    <div id="skmw-trial" class="skmw-trial">🆓 Trial: 3/5 posts</div>
+    <p class="sub">Paste raw thoughts — AI turns them into a post ready to drop into Skool.</p>
+    <label>Your thoughts</label>
+    <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
+    <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
+    <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
+    <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap">
+      <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
+      <select id="skmw-ctx-count" class="skmw-ctx-count">
+        <option value="10" selected>10 posts</option>
+        <option value="20">20 posts</option>
+        <option value="30">30 posts</option>
+      </select>
+    </label>
+    <div class="skmw-actions">
+      <button class="skmw-btn skmw-btn-ghost" id="skmw-cancel">Cancel</button>
+      <button class="skmw-btn skmw-btn-pink" id="skmw-go">✨ Generate &amp; Insert</button>
+    </div>
+    <div class="skmw-err" id="skmw-err"></div>
+    <div class="skmw-loading" id="skmw-loading" style="display:none;">
+      <div class="skmw-progress"><div class="skmw-progress-bar"></div></div>
+      <p class="skmw-loading-text">✨ Generating your post...</p>
+    </div>
+  </div>`);
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  modal.querySelector('#skmw-cancel').addEventListener('click', () => overlay.remove());
+  setTimeout(() => document.getElementById('skmw-in')?.focus(), 60);
+}
+
 function renderCalendar() {
   document.querySelector('.skmw-pop')?.remove();
   const pop = el(`<div class="skmw-pop">
