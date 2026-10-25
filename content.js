@@ -1535,9 +1535,10 @@ async function loadScheduled() {
     if (newly.length) notifyEnabled((on) => { if (!on) return; newly.forEach((p) => shouldNotifyPublish(p.id, (ok) => { if (ok) notifyPublished(p); })); });
   } catch (e) {
     calState.posts = [];
-    // Extension context invalidated → getJwt already warned the user once;
-    // don't spam this every 120s poll.
-    if (!_contextLost) console.warn('[skmw] load scheduled failed:', e.message);
+    // Extension reloaded → the old script's chrome.runtime is dead. Same
+    // handling as context loss: self-heal by reloading the tab (once).
+    if (/context invalidated/i.test(e.message || '')) handleContextLost();
+    else if (!_contextLost) console.warn('[skmw] load scheduled failed:', e.message);
   }
   updateBadge();
   // Auto-clean Sent rows older than 7 days when the user enabled 🧹
@@ -1911,7 +1912,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.28');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.29');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
