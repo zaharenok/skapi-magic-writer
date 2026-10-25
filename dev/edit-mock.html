@@ -90,7 +90,9 @@
   .skmw-when-right .skmw-row{min-height:20px;}
   .skmw-when-left{width:225px;flex-shrink:0;}
   .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
-  .skmw-cal-toggle{width:100%;text-align:left;padding:9px 12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#0A0A0A;}
+  .skmw-cal-toggle{width:100%;text-align:left;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#0A0A0A;}
+  .skmw-cal-time{display:flex;gap:6px;margin-top:6px;}
+  .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#0A0A0A;cursor:pointer;}
   .skmw-cal-toggle:hover{border-color:#FF90E8;}
   .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
   .skmw-preset:hover{border-color:#FF90E8;color:#0A0A0A;}
@@ -470,6 +472,7 @@ function openScheduleMock() {
           <div class="skmw-when-left">
             <label style="display:block;">Publish at</label>
             <button type="button" class="skmw-cal-toggle" id="skmw-s-toggle"></button>
+            <div class="skmw-cal-time"><select id="skmw-s-h"></select><select id="skmw-s-m"></select></div>
           </div>
           <div class="skmw-when-right">
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
@@ -490,8 +493,15 @@ function openScheduleMock() {
   const close = () => overlay.remove();
   const $tgl = document.getElementById('skmw-s-toggle');
   const $past = document.getElementById('skmw-s-past');
+  const $h = document.getElementById('skmw-s-h');
+  const $m = document.getElementById('skmw-s-m');
+  for (let h = 0; h < 24; h++) $h.add(new Option(String(h).padStart(2, '0'), String(h)));
+  for (let m = 0; m < 60; m++) $m.add(new Option(String(m).padStart(2, '0'), String(m)));
+  $h.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
+  $m.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
   function syncFromChosen() {
     $tgl.textContent = '📅 ' + chosen.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    $h.value = String(chosen.getHours()); $m.value = String(chosen.getMinutes());
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
   $dt.addEventListener('change', () => {
