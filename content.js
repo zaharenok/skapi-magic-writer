@@ -209,6 +209,13 @@ function getJwt(retried) {
     }
   });
 }
+function getSlug() {
+  // The post publishes to the community it was written in — auto-detected
+  // from the current URL. Access is gated by Skool itself: if the user can
+  // write there, they can schedule there (2026-10-25).
+  return (location.pathname.split('/').filter(Boolean)[0]) || '';
+}
+
 async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
   // Routed via the background service worker: content scripts share the page
   // context, so a direct fetch to api.skapi.pro is subject to skool.com's
@@ -939,6 +946,7 @@ const gifDesc = (u, term) => u
 async function openScheduleDialog(post = null, prefillText = null) {
   if (dialogOpen) return;
   dialogOpen = true;
+  const slug = getSlug();
   const isEdit = !!post;
 
   let content = '';
@@ -1140,9 +1148,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
         const $em = document.getElementById('skmw-s-email');
         if ($em) $em.checked = false;
       }
-      // Publish target (community) is set server-side from the dashboard —
-      // the extension no longer chooses where posts go (2026-10-25).
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      // Publishes into the community the post was written in; the server
+      // re-checks access via the stored JWT at publish time.
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (isEdit && post?.id) {
         // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
         const { language: _langOmitted, ...putBody } = body;
@@ -1751,7 +1759,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.1');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.2');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
