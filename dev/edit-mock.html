@@ -196,6 +196,13 @@ function openMagicMock() {
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
     <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
     <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
+    <label class="skmw-gif">📏 Post length
+      <select id="skmw-len" class="skmw-ctx-count">
+        <option value="short">Short (~150 chars)</option>
+        <option value="medium" selected>Medium</option>
+        <option value="long">Long (~1200-1800 chars)</option>
+      </select>
+    </label>
     <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap">
       <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
       <select id="skmw-ctx-count" class="skmw-ctx-count">

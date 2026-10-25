@@ -689,6 +689,13 @@ async function openMagicDialog() {
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
     <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
     <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
+    <label class="skmw-gif">📏 Post length
+      <select id="skmw-len" class="skmw-ctx-count">
+        <option value="short">Short (~150 chars)</option>
+        <option value="medium" selected>Medium</option>
+        <option value="long">Long (~1200-1800 chars)</option>
+      </select>
+    </label>
     <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap" title="🔒 Pro feature — requires an active subscription">
       <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
       <select id="skmw-ctx-count" class="skmw-ctx-count">
@@ -753,9 +760,15 @@ async function openMagicDialog() {
     const input = document.getElementById('skmw-in').value.trim();
     const wantTitle = document.getElementById('skmw-title').checked;
     if (!input) { showErr('Write something first.'); return; }
-    const prompt = wantTitle
+    const lenSel = document.getElementById('skmw-len')?.value || 'medium';
+    const lenHint = lenSel === 'short'
+      ? ' The final post must be SHORT — about 150 characters, 1-2 sentences, no fluff.'
+      : lenSel === 'long'
+        ? ' The final post must be LONG and detailed — about 1200-1800 characters, several paragraphs.'
+        : '';
+    const prompt = (wantTitle
       ? `Write a community post with a catchy short title (2-6 words) at the top, then the post content. Plain text only, no markdown. Output ONLY the finished post: the title on the first line, a blank line, then the content. Do not include any notes, planning, or commentary. Here are the thoughts:\n\n${input}`
-      : `Write a community post. Plain text only, no markdown. Output ONLY the finished post, no notes, planning, or commentary. Here are the thoughts:\n\n${input}`;
+      : `Write a community post. Plain text only, no markdown. Output ONLY the finished post, no notes, planning, or commentary. Here are the thoughts:\n\n${input}`) + lenHint;
     const goBtn = document.getElementById('skmw-go');
     const loading = document.getElementById('skmw-loading');
     const loadingText = loading.querySelector('.skmw-loading-text');
@@ -1898,7 +1911,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.26');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.27');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
