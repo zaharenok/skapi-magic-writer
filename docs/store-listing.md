@@ -1,11 +1,11 @@
-# Chrome Web Store — submission kit (Skool Magic Writer v1.1.27)
+# Chrome Web Store — submission kit (Skool Magic Writer v1.1.28)
 
-Zip для загрузки: `skool-magic-writer-1.1.27.zip` (в корне сабмодуля).
+Zip для загрузки: `skool-magic-writer-1.1.28.zip` (в корне сабмодуля).
 Консоль: https://chrome.google.com/webstore/devconsole (нужен аккаунт разработчика, разовый взнос $5).
 
 ## Что заполнять в консоли
 
-- **Upload zip** → `skool-magic-writer-1.1.27.zip`
+- **Upload zip** → `skool-magic-writer-1.1.28.zip`
 - **Store listing → Locale**: добавить языки ниже (Add locale), в каждый вставить Name / Short description / Detailed description из своего раздела.
 - **Category**: Productivity.
 - **Screenshots**: 1–5 штук 1280×800. Советую снять: диалог ✨ Magic Post, окно 📅 Schedule post с пресетами, попап со списком отложенных постов.
@@ -29,7 +29,7 @@ Zip для загрузки: `skool-magic-writer-1.1.27.zip` (в корне са
 ## Переводы витрины (Name ≤45 · Short ≤132 · Detailed)
 
 ### en — English
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — AI Posts & Scheduling
 **Short:** Write Skool posts with a little AI help, attach GIFs and schedule them for later. All inside skool.com.
 **Detailed:**
 Skool Magic Writer puts two small buttons next to the composer you already use on skool.com. Everything happens right there, where you normally write.
@@ -45,7 +45,7 @@ The extension works with the Skool session you are already logged into. No passw
 On privacy: the extension reads your Skool session cookie so it can publish as you, saves your settings in your browser, and only ever talks to our own server at api.skapi.pro. No ads, no analytics, no data selling.
 
 ### ru — Русский
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — ИИ-посты и расписание
 **Short:** Пишите посты для Skool с помощью ИИ, прикрепляйте GIF и откладывайте публикацию. Всё внутри skool.com.
 **Detailed:**
 Skool Magic Writer ставит две кнопки рядом с полем, где вы обычно пишете посты в skool.com. Весь интерфейс живёт там же, ничего настраивать не нужно.
@@ -61,7 +61,7 @@ Skool Magic Writer ставит две кнопки рядом с полем, г
 Про приватность: расширение читает cookie сессии Skool, чтобы публиковать посты от вашего имени, хранит настройки в браузере и общается только с нашим сервером api.skapi.pro. Никакой рекламы и аналитики, данные не продаём.
 
 ### uk — Українська
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — ШІ-пости й розклад
 **Short:** Створюйте пости для Skool за допомогою ШІ, додавайте GIF і плануйте публікацію. Усе в середині skool.com.
 **Detailed:**
 Skool Magic Writer додає дві кнопки поруч із полем, де ви зазвичай пишете пости в skool.com. Увесь інтерфейс живе там же.
@@ -77,7 +77,7 @@ Skool Magic Writer додає дві кнопки поруч із полем, д
 Про приватність: розширення читає cookie сесії Skool, щоб публікувати пости від вашого імені, зберігає налаштування в браузері і спілкується лише з нашим сервером api.skapi.pro. Реклами й аналітики немає, дані не продаємо.
 
 ### de — Deutsch
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — KI-Posts & Planung
 **Short:** Schreibe Skool-Beiträge mit etwas KI-Unterstützung, hänge GIFs an und plane sie für später. Alles in skool.com.
 **Detailed:**
 Skool Magic Writer setzt zwei kleine Buttons neben das Eingabefeld, das du auf skool.com eh schon benutzt. Alles passiert genau dort, wo du normalerweise schreibst.
@@ -93,7 +93,7 @@ Die Erweiterung nutzt die Skool-Sitzung, in der du schon eingeloggt bist. Keine 
 Zum Datenschutz: Die Erweiterung liest deinen Skool-Session-Cookie, um in deinem Namen zu veröffentlichen, speichert Einstellungen im Browser und spricht nur mit unserem eigenen Server api.skapi.pro. Keine Werbung, keine Tracker, kein Datenverkauf.
 
 ### es — Español
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Posts con IA y horario
 **Short:** Escribe posts para Skool con ayuda de IA, adjunta GIFs y publícalos cuando quieras. Todo dentro de skool.com.
 **Detailed:**
 Skool Magic Writer coloca dos botones pequeños junto al cuadro donde ya escribes en skool.com. Todo pasa ahí mismo, donde normalmente escribes.
@@ -109,7 +109,7 @@ La extensión funciona con la sesión de Skool en la que ya estás. Sin contrase
 Sobre la privacidad: la extensión lee tu cookie de sesión de Skool para publicar en tu nombre, guarda los ajustes en tu navegador y solo habla con nuestro servidor api.skapi.pro. Sin anuncios, sin analítica, no vendemos datos.
 
 ### fr — Français
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Posts IA & programmation
 **Short:** Rédigez vos posts Skool avec un coup de main de l'IA, joignez des GIF et publiez plus tard. Tout dans skool.com.
 **Detailed:**
 Skool Magic Writer ajoute deux petits boutons à côté de la zone où vous écrivez déjà sur skool.com. Tout se passe là, dans votre flux de travail habituel.
@@ -125,7 +125,7 @@ L'extension fonctionne avec votre session Skool existante. Pas de mot de passe, 
 Côté vie privée : l'extension lit votre cookie de session Skool pour publier en votre nom, garde vos réglages dans le navigateur et ne parle qu'à notre serveur api.skapi.pro. Pas de pub, pas de trackers, pas de revente de données.
 
 ### it — Italiano
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Post con IA e programma
 **Short:** Scrivi post per Skool con un aiuto dall'IA, allega GIF e pubblicali quando vuoi. Tutto dentro skool.com.
 **Detailed:**
 Skool Magic Writer aggiunge due piccoli pulsanti accanto alla casella dove già scrivi su skool.com. Tutto succede lì, dove di solito lavori.
@@ -141,7 +141,7 @@ L'estensione usa la sessione Skool a cui sei già collegato. Niente password, ni
 Sulla privacy: l'estensione legge il cookie di sessione Skool per pubblicare per conto tuo, salva le impostazioni nel browser e parla solo con il nostro server api.skapi.pro. Niente pubblicità, niente tracker, nessuna vendita di dati.
 
 ### pt_BR — Português (Brasil)
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Posts com IA e agenda
 **Short:** Escreva posts para o Skool com ajuda de IA, anexe GIFs e publique quando quiser. Tudo dentro do skool.com.
 **Detailed:**
 O Skool Magic Writer coloca dois botões pequenos ao lado da caixa onde você já escreve no skool.com. Tudo acontece ali mesmo, no seu fluxo de sempre.
@@ -157,7 +157,7 @@ A extensão funciona com a sessão do Skool em que você já está. Sem senhas, 
 Sobre privacidade: a extensão lê o cookie de sessão do Skool para publicar em seu nome, guarda as configurações no navegador e conversa apenas com o nosso servidor api.skapi.pro. Sem anúncios, sem rastreadores, não vendemos dados.
 
 ### pl — Polski
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Posty AI i harmonogram
 **Short:** Pisz posty do Skool z pomocą AI, dodawaj GIF-y i publikuj, kiedy chcesz. Wszystko w skool.com.
 **Detailed:**
 Skool Magic Writer dodaje dwa małe przyciski obok pola, w którym już piszesz na skool.com. Wszystko dzieje się na miejscu, w twoim normalnym rytmie pracy.
@@ -173,7 +173,7 @@ Rozszerzenie działa na twojej bieżącej sesji Skool. Bez haseł i drugiego kon
 Prywatność: rozszerzenie czyta ciasteczko sesji Skool, żeby publikować w twoim imieniu, zapisuje ustawienia w przeglądarce i rozmawia wyłącznie z naszym serwerem api.skapi.pro. Bez reklam, bez trackerów, nie sprzedajemy danych.
 
 ### tr — Türkçe
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — Yapay zekâ ile gönderi
 **Short:** Skool için yapay zekâ desteğiyle gönderiler yazın, GIF ekleyin ve zamanlayın. Hepsi skool.com içinde.
 **Detailed:**
 Skool Magic Writer, skool.com'da zaten yazı yazdığınız kutunun yanına iki küçük düğme ekler. Her şey orada, alıştığınız yerde olur.
@@ -189,7 +189,7 @@ Uzantı, içinde zaten oturum açık olan Skool hesabınızla çalışır. Şifr
 Gizlilik hakkında: uzantı sizin adınıza yayınlayabilmek için Skool oturum çerezinizi okur, ayarları tarayıcınızda saklar ve yalnızca kendi sunucumuz api.skapi.pro ile konuşur. Reklam yok, izleyici yok, veri satışı yok.
 
 ### nl — Nederlands
-**Name:** Skool Magic Writer
+**Name:** Skool Magic Writer — AI-posts & planning
 **Short:** Schrijf Skool-posts met een beetje hulp van AI, voeg GIF's toe en plan ze voor later. Alles in skool.com.
 **Detailed:**
 Skool Magic Writer zet twee kleine knoppen naast het veld waar je op skool.com toch al schrijft. Alles gebeurt daar, in je gewone werkstroom.

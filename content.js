@@ -689,19 +689,19 @@ async function openMagicDialog() {
     <textarea id="skmw-in" placeholder="Bullet points, links, rough ideas..."></textarea>
     <label class="skmw-gif"><input type="checkbox" id="skmw-title" checked>Generate a catchy title (first line)</label>
     <label class="skmw-gif"><input type="checkbox" id="skmw-magic-gif">🎬 Attach a relevant GIF when inserting</label>
-    <label class="skmw-gif">📏 Post length
-      <select id="skmw-len" class="skmw-ctx-count">
-        <option value="short">Short (~150 chars)</option>
-        <option value="medium" selected>Medium</option>
-        <option value="long">Long (~1200-1800 chars)</option>
-      </select>
-    </label>
     <label class="skmw-gif skmw-ctx" id="skmw-ctx-wrap" title="🔒 Pro feature — requires an active subscription">
       <input type="checkbox" id="skmw-ctx">📚 Use recent community posts as context
       <select id="skmw-ctx-count" class="skmw-ctx-count">
         <option value="10" selected>10 posts</option>
         <option value="20">20 posts</option>
         <option value="30">30 posts</option>
+      </select>
+    </label>
+    <label class="skmw-gif">📏 Post length
+      <select id="skmw-len" class="skmw-ctx-count">
+        <option value="short">Short (~150 chars)</option>
+        <option value="medium" selected>Medium</option>
+        <option value="long">Long (~1200-1800 chars)</option>
       </select>
     </label>
     <div class="skmw-actions">
@@ -1293,7 +1293,7 @@ function ding() {
 function notifyPublished(post) {
   const what = (post.title || (post.content || '').split('\n')[0] || 'Your post').slice(0, 90);
   try { toast(`✅ Published: ${what}`); } catch (_) {}
-  try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: 'Skool Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
+  try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: chrome.i18n.getMessage('extName') || 'Skool Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
   ding();
 }
 function gifTermFrom(text) {
@@ -1911,7 +1911,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.27');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.28');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "1.1.27",
+  "version": "1.1.28",
   "default_locale": "en",
   "description": "__MSG_extDesc__",
   "permissions": [
@@ -18,7 +18,7 @@
   },
   "options_page": "options.html",
   "action": {
-    "default_title": "Skool Magic Writer: use the ✨ and 📅 buttons on skool.com",
+    "default_title": "__MSG_actionTitle__",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
