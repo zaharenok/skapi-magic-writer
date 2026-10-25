@@ -1773,7 +1773,7 @@ function renderEditForm(post, container) {
     }
   }
   let chosen = new Date(post.scheduled_for);
-  if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
+  if (isNaN(chosen.getTime())) chosen = defaultScheduleTime();
   const gifOn = !!post.gif_search;
 
   container.closest('.skmw-pop')?.classList.add('editing');
@@ -1898,7 +1898,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.22');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.23');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
