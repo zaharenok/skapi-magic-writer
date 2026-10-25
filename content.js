@@ -506,6 +506,17 @@ function injectStyles() {
     .skmw-pop:not(.editing) #skmw-list{max-height:455px;overflow-y:auto;}
     .skmw-scroll-hint{position:sticky;bottom:2px;display:none;justify-content:center;pointer-events:none;margin-top:-10px;}
     .skmw-scroll-hint span{background:rgba(243,244,246,.8);backdrop-filter:blur(2px);border:1px solid #e5e7eb;border-radius:999px;padding:2px 12px;font-size:12px;font-weight:800;color:#6b7280;box-shadow:0 -6px 10px -6px rgba(0,0,0,.18);}
+    #skmw-in{min-height:200px;}
+    .skmw-s-toprow{display:flex;gap:10px;}
+    .skmw-s-toprow .col1{flex:1;min-width:0;}
+    .skmw-s-toprow .col2{width:190px;flex-shrink:0;}
+    .skmw-s-toprow input{width:100%;box-sizing:border-box;}
+    .skmw-linkrow{display:flex;align-items:center;gap:8px;margin-top:6px;}
+    .skmw-linkrow input[type=checkbox]{margin:0;accent-color:${BRAND};cursor:pointer;flex-shrink:0;}
+    .skmw-linkrow input[type=text]{flex:1;min-width:0;box-sizing:border-box;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;color:${INK};background:#fff;}
+    .skmw-linkrow input[type=text]:focus{outline:none;border-color:${BRAND};}
+    .skmw-addlink{margin-top:8px;padding:6px 12px;border:1.5px dashed #d1d5db;background:#fff;border-radius:8px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;}
+    .skmw-addlink:hover{border-color:${BRAND};color:${BRAND};}
     .skmw-pop.editing textarea{min-height:280px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -543,7 +554,7 @@ function injectStyles() {
     .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
     .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
     /* Schedule modal: single column at every width (matches the approved mock) */
-    .skmw-modal-wide{max-width:680px;}
+    .skmw-modal-wide{max-width:560px;}
     .skmw-sched-cols{display:flex;flex-direction:column;gap:16px;}
     .skmw-sched-left{min-width:0;display:flex;flex-direction:column;gap:6px;}
     .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
@@ -986,6 +997,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const composerGif = isEdit ? null : findComposerGif();
   const composerTopic = findComposerTopic();
   const composerEmailOn = isEdit ? false : await findComposerEmailOn();
+  // Video links captured from the composer seed the checkbox link rows.
+  const openVideoLinks = isEdit ? [] : (captureComposerMediaUrls(composerGif).videoLinks || []);
 
   const hasComposerMedia = !!(findEditor() && findEditor().querySelector('img, video'));
   const gifSavedNote = composerGif || lastGifTerm;
@@ -1000,8 +1013,10 @@ async function openScheduleDialog(post = null, prefillText = null) {
     ${!isEdit ? (gifSavedNote ? '<div class="skmw-chip skmw-chip-ok">🎬 GIF will be saved with this post</div>' : (hasComposerMedia ? '<div class="skmw-chip skmw-chip-warn">⚠️ Only 🎬-picked GIFs carry over — uploaded files won\'t</div>' : '')) : editGifNote}
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
-        <label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">
-        <label style="margin-top:10px;">Topic</label><input type="text" id="skmw-s-topic" value="${escapeHtml(composerTopic)}" placeholder="(group default)">
+        <div class="skmw-s-toprow">
+          <div class="col1"><label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title"></div>
+          <div class="col2"><label>Topic</label><input type="text" id="skmw-s-topic" list="skmw-topic-options" value="${escapeHtml(composerTopic)}" placeholder="(group default)"><datalist id="skmw-topic-options">${composerTopic ? `<option value="${escapeHtml(composerTopic)}">` : ''}</datalist></div>
+        </div>
         <label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
       </div>
       <div class="skmw-sched-right">
@@ -1011,8 +1026,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
         <div id="skmw-s-cal"></div>
-        <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(one per line)</span></label>
-        <textarea class="skmw-links" id="skmw-s-links" placeholder="https://youtu.be/..."></textarea>
+        <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
+        <div id="skmw-s-linklist"></div>
+        <button type="button" class="skmw-addlink" id="skmw-s-addlink">＋ Add link</button>
         <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
     </div>
@@ -1074,6 +1090,17 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // Month calendar wired both ways: day click → chosen (+input), manual
   // input edit → chosen (+calendar).
   const sCal = mountPopupCalendar(document.getElementById('skmw-s-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
+
+  // Checkbox link rows: each captured/manual URL participates in the
+  // publication only while its checkbox is checked; edit the text to swap
+  // a URL, ＋ adds an empty row.
+  const linkList = document.getElementById('skmw-s-linklist');
+  const addLinkRow = (url) => {
+    const row = el(`<div class="skmw-linkrow"><input type="checkbox" checked><input type="text" placeholder="https://youtu.be/..." value="${escapeHtml(url || '')}"></div>`);
+    linkList.appendChild(row);
+  };
+  openVideoLinks.forEach(addLinkRow);
+  document.getElementById('skmw-s-addlink').addEventListener('click', () => addLinkRow(''));
   $dt.addEventListener('change', () => {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); sCal.refresh(); }
@@ -1143,11 +1170,14 @@ async function openScheduleDialog(post = null, prefillText = null) {
       // (intercepted input, trimmed to the live video cards); Links textarea
       // lines (embed or file URLs) ride along as before.
       const captured = captureComposerMediaUrls(gifUrl);
-      const autoVideoLinks = captured.videoLinks || [];
-      const linkLines = ((document.getElementById('skmw-s-links')?.value) || '')
-        .split('\n').map((s) => s.trim()).filter(Boolean);
-      const mediaUrls = [...new Set([...captured.urls, ...autoVideoLinks, ...linkLines])];
-      if (!isEdit && captured.hasVideo && !autoVideoLinks.length && !linkLines.some((u) => /\.(mp4|webm|mov|avi|mkv)([?#]|$)/i.test(u))) {
+      // Links: only rows with a checked box ride along; the URL text is
+      // editable, so pasting a new URL into a row replaces the old one.
+      const rowUrls = [...document.querySelectorAll('#skmw-s-linklist .skmw-linkrow')]
+        .filter((r) => r.querySelector('input[type="checkbox"]').checked)
+        .map((r) => (r.querySelector('input[type="text"]').value || '').trim())
+        .filter((v) => /^https?:\/\//i.test(v));
+      const mediaUrls = [...new Set([...captured.urls, ...rowUrls])];
+      if (!isEdit && captured.hasVideo && !rowUrls.length && !mediaUrls.some((u) => /\.(mp4|webm|mov|avi|mkv)([?#]|$)/i.test(u))) {
         toast('⚠️ video: paste its URL in Links');
       }
       let emailMembers = !!document.getElementById('skmw-s-email')?.checked;
@@ -1840,7 +1870,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.9');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.10');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
