@@ -1181,6 +1181,8 @@ async function openScheduleDialog(post = null, prefillText = null) {
     if (String(m).includes('subscription_required')) {
       const url = window.__skmwSubUrl || 'https://www.skool.com';
       e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+    } else if (String(m).includes('scheduled_limit')) {
+      e.textContent = '🗓 Лимит: максимум 7 отложенных постов одновременно. Дождись публикации или удали лишние в списке 📅.';
     } else {
       e.textContent = m;
     }
@@ -1779,7 +1781,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.3');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.4');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
