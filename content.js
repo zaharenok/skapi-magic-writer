@@ -1460,7 +1460,7 @@ function mountCalendar(container, getChosen, setChosen) {
 function mountPopupCalendar(container, getChosen, setChosen) {
   const fmt = (d) => d.toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   container.classList.add('skmw-cal-wrap');
-  container.innerHTML = `<button type="button" class="skmw-cal-toggle">📅 ${escapeHtml(fmt(getChosen()))}</button><div class="skmw-cal skmw-cal-pop" style="display:none"><div class="skmw-cal-main"></div><div class="skmw-cal-time"><input type="time" class="skmw-cal-timeinp" aria-label="Time"></div></div>`;
+  container.innerHTML = `<button type="button" class="skmw-cal-toggle">📅 ${escapeHtml(fmt(getChosen()))}</button><div class="skmw-cal skmw-cal-pop" style="display:none"><div class="skmw-cal-time"><input type="time" class="skmw-cal-timeinp" aria-label="Time"></div><div class="skmw-cal-main"></div></div>`;
   const btn = container.querySelector('.skmw-cal-toggle');
   const pop = container.querySelector('.skmw-cal-pop');
   btn.addEventListener('click', (e) => { e.stopPropagation(); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
@@ -1790,7 +1790,7 @@ function renderEditForm(post, container) {
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || gifOn); return `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;"${hasGif ? ' checked' : ''}> 🎬 GIF ${hasGif ? '✓' : '(none)'}</label>`; })()}
     <label style="margin-top:14px;">Publish at</label>
-    <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" value="${toDtLocal(chosen)}">
+    <div id="skmw-e-cal"></div>
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
     <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
     <div id="skmw-e-linklist"></div>
@@ -1803,18 +1803,14 @@ function renderEditForm(post, container) {
     <div class="skmw-err" id="skmw-e-err"></div>
   `;
 
-  const $dt = document.getElementById('skmw-e-dt');
   const $past = document.getElementById('skmw-e-past');
 
   function syncFromChosen() {
-    $dt.value = toDtLocal(chosen);
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
-  $dt.addEventListener('change', () => {
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
-  });
-  syncFromChosen();
+
+  // Calendar popup (time row above the grid), shared with the schedule dialog.
+  const eCal = mountPopupCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
 
   // Checkbox link rows (max 3), same pattern as the schedule dialog.
   const linkList = document.getElementById('skmw-e-linklist');
@@ -1902,7 +1898,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.21');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.22');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
