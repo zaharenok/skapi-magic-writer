@@ -1788,16 +1788,9 @@ function renderEditForm(post, container) {
     </div>
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
-    ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<div style="font-size:12px;${hasGif ? 'color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;' : 'color:#6b7280;background:#F9FAFB;border:1.5px solid #e5e7eb;'}border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${hasGif ? '✓ ' + gifDesc(post.media_url, post.gif_search) : '✗ none'}</div>`; })()}
-    <div class="skmw-when-row">
-      <div class="skmw-when-left">
-        <label style="display:block;">Publish at</label>
-        <div id="skmw-e-cal"></div>
-      </div>
-      <div class="skmw-when-right">
-        <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"${post.email_members ? ' checked' : ''}> 📧 Send email to all members</label>
-      </div>
-    </div>
+    ${(() => { const hasGif = !!(post.media_url || gifOn); return `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;"${hasGif ? ' checked' : ''}> 🎬 GIF ${hasGif ? '✓' : '(none)'}</label>`; })()}
+    <label style="margin-top:14px;">Publish at</label>
+    <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
     <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
     <div id="skmw-e-linklist"></div>
@@ -1810,14 +1803,18 @@ function renderEditForm(post, container) {
     <div class="skmw-err" id="skmw-e-err"></div>
   `;
 
+  const $dt = document.getElementById('skmw-e-dt');
   const $past = document.getElementById('skmw-e-past');
 
   function syncFromChosen() {
+    $dt.value = toDtLocal(chosen);
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
-
-  // Month calendar, wired identically to the schedule dialog.
-  const eCal = mountPopupCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
+  $dt.addEventListener('change', () => {
+    const v = new Date($dt.value);
+    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
+  });
+  syncFromChosen();
 
   // Checkbox link rows (max 3), same pattern as the schedule dialog.
   const linkList = document.getElementById('skmw-e-linklist');
@@ -1851,10 +1848,9 @@ function renderEditForm(post, container) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      // Preserve the post's GIF term: the server treats null as "not
-      // provided" (update skips None), so sending null would NOT wipe it —
-      // but it also would never re-arm the publisher's GIF fallback for an
-      // edited post. Resend the stored term so the GIF still gets attached.
+      // GIF checkbox: checked → keep the stored media_url + term; unchecked →
+      // send "" (update skips null, so "" is the way to CLEAR the GIF).
+      const gifChecked = !!document.getElementById('skmw-e-gif')?.checked;
       // Links: only rows with a checked box ride along ([] clears the list —
       // the server updates any non-None value); email flag rides the checkbox.
       const linkRows = [...document.querySelectorAll('#skmw-e-linklist .skmw-linkrow')]
@@ -1867,7 +1863,7 @@ function renderEditForm(post, container) {
         const $em = document.getElementById('skmw-e-email');
         if ($em) $em.checked = false;
       }
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), category: (document.getElementById('skmw-e-topic')?.value || '').trim(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkRows, email_members: emailMembers };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), category: (document.getElementById('skmw-e-topic')?.value || '').trim(), media_url: gifChecked ? (post.media_url || '') : '', gif_search: gifChecked && gifOn ? (post.gif_search || null) : '', media_urls: linkRows, email_members: emailMembers };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
@@ -1906,7 +1902,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.19');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.20');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
