@@ -387,7 +387,7 @@ function renderEditForm(post, container) {
     </div>
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
-    ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;"${hasGif ? ' checked' : ''}> 🎬 GIF ${hasGif ? '✓' : '(none)'}</label>`; })()}
+    ${(() => { const hasGif = !!(post.media_url || post.gif_search); return hasGif ? `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;" checked> 🎬 GIF ✓</label>` : ''; })()}
     <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
