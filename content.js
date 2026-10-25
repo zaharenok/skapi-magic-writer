@@ -561,7 +561,6 @@ function injectStyles() {
     .skmw-preset:hover{border-color:${BRAND};color:${INK};}
     .skmw-preset.active{background:${BRAND};border-color:${INK};color:${INK};}
     .skmw-modal label.skmw-gif,.skmw-gif{display:inline-flex;align-items:center;gap:10px;min-height:20px;line-height:1;margin:16px 0 0;font-size:12px;font-weight:700;color:#374151;cursor:pointer;text-transform:none;letter-spacing:0;}
-    label.skmw-gif:has(> #skmw-magic-gif){display:flex;justify-content:flex-end;}
     .skmw-gif input{width:16px;height:16px;margin:0;flex-shrink:0;accent-color:${BRAND};cursor:pointer;}
     .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
     .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
@@ -1898,7 +1897,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.23');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.24');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
