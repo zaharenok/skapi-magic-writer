@@ -501,6 +501,9 @@ function injectStyles() {
     .skmw-pop.editing{width:520px;}
     .skmw-pop .skmw-ac{display:inline-flex;margin:0;}
     .skmw-pop.editing #skmw-list{padding:8px 14px 14px;}
+    /* Cap the popup height: ~7 items, then internal scroll — the panel must
+       not grow into a wall of Sent posts (2026-10-25). */
+    .skmw-pop:not(.editing) #skmw-list{max-height:455px;overflow-y:auto;}
     .skmw-pop.editing textarea{min-height:280px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -980,6 +983,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // the save handler reuses this snapshot instead of re-querying the DOM.
   const composerGif = isEdit ? null : findComposerGif();
   const composerTopic = findComposerTopic();
+  const composerEmailOn = isEdit ? false : await findComposerEmailOn();
 
   const hasComposerMedia = !!(findEditor() && findEditor().querySelector('img, video'));
   const gifSavedNote = composerGif || lastGifTerm;
@@ -1007,7 +1011,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <div id="skmw-s-cal"></div>
         <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(one per line)</span></label>
         <textarea class="skmw-links" id="skmw-s-links" placeholder="https://youtu.be/..."></textarea>
-        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
+        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
@@ -1300,6 +1304,44 @@ function findComposerTopic() {
     if (t && !b.getAttribute('aria-label') && t !== 'Post' && t.length < 40) return t;
   }
   return '';
+}
+
+// Composer's "send email to all members" lives in the caret menu of the
+// textless button right after Post (button class gyEjcq — user-supplied DOM
+// ground truth 2026-10-25). Its state is only readable by opening that menu:
+// click, read the item, close. Best-effort — any failure returns false and
+// the dialog checkbox remains the sole source of truth.
+async function findComposerEmailOn() {
+  const vis = (n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const post = [...document.querySelectorAll('button')].find((b) => vis(b) && (b.textContent || '').trim() === 'Post');
+  if (!post) return false;
+  let n = post.nextElementSibling;
+  let menuBtn = null;
+  for (let i = 0; i < 4 && n; i++) {
+    if (n.tagName === 'BUTTON' && !(n.textContent || '').trim()) { menuBtn = n; break; }
+    n = n.nextElementSibling;
+  }
+  if (!menuBtn) return false;
+  try {
+    menuBtn.click();
+    await new Promise((r) => setTimeout(r, 350));
+    const item = [...document.querySelectorAll('[role="button"],[role="menuitem"],li,div')]
+      .filter(vis)
+      .find((e) => /send email to all members/i.test(e.textContent || '') && e.textContent.length < 60);
+    let on = false;
+    if (item) {
+      const checked = item.getAttribute('aria-checked');
+      if (checked != null) on = checked === 'true';
+      else on = /(^|[^a-z])check|selected|active([^a-z]|$)/i.test((item.className || '').toString())
+        || /[✓✔]|check/i.test(item.outerHTML.slice(0, 600));
+    }
+    menuBtn.click(); // close the menu without toggling anything
+    document.activeElement?.blur();
+    return on;
+  } catch (e) {
+    console.warn('[skmw] email toggle read failed:', e && e.message);
+    return false;
+  }
 }
 
 // One document-level capture-phase listener for the SPA lifetime. The video
@@ -1781,7 +1823,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.4');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.5');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
