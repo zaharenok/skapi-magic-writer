@@ -446,7 +446,10 @@ function startDiscardWatcher() {
     // tabs, which is exactly where scheduled closes happen.
     setTimeout(() => { scheduled = false; check(); }, 120);
   });
-  obs.observe(document.body, { childList: true, subtree: true });
+  // attributes: Skool can pre-mount the guard dialog and reveal it by
+  // toggling style/class — childList alone never fires for that (regression
+  // 2026-10-25: the modal showed again despite the watcher being armed).
+  obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
 }
 
 function toast(msg) {
@@ -570,8 +573,15 @@ function injectStyles() {
     .skmw-cal-off:hover{background:transparent;}
     .skmw-cal-sel,.skmw-cal-sel:hover{background:${BRAND};color:${INK};}
     .skmw-cal-today:not(.skmw-cal-sel){box-shadow:inset 0 0 0 1.5px #e5e7eb;}
+    .skmw-cal-wrap{position:relative;margin-top:8px;}
+    .skmw-cal-toggle{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:2px solid #e5e7eb;border-radius:999px;background:#fff;font-size:12px;font-weight:700;color:${INK};cursor:pointer;font-family:inherit;}
+    .skmw-cal-toggle:hover{border-color:${BRAND};}
+    .skmw-cal-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:10002;width:250px;margin-top:0;box-shadow:0 12px 28px rgba(0,0,0,.18);}
     .skmw-links{width:100%;box-sizing:border-box;min-height:56px;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;color:${INK};background:#fff;resize:vertical;margin-top:2px;}
     .skmw-links:focus{outline:none;border-color:${BRAND};}
+    /* Generic textarea rules (.skmw-modal 120px / .skmw-pop 150px) outrank
+       .skmw-links by specificity and inflated the links field — pin it. */
+    .skmw-modal textarea.skmw-links,.skmw-pop textarea.skmw-links{min-height:56px;max-height:140px;}
     .skmw-chip{display:inline-flex;align-items:center;gap:6px;width:fit-content;max-width:100%;box-sizing:border-box;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;margin:0 0 10px;}
     .skmw-chip-ok{background:#DCFCE7;border:1px solid #16A34A;color:#166534;}
     .skmw-chip-warn{background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;}
@@ -627,14 +637,16 @@ function injectScheduleInComposer() {
     const titleInput = findTitleInput();
     const body = editorText(editor);
     const title = titleInput ? titleInput.value.trim() : '';
-    const fullText = (title ? title + '\n\n' : '') + body;
-    
+
     // Save to localStorage for restoration on cancel
     const communityKey = location.href;
     localStorage.setItem('skmw_saved_title_' + communityKey, title);
     localStorage.setItem('skmw_saved_body_' + communityKey, body);
-    
-    openScheduleDialog(null, fullText);
+
+    // Body only — the dialog reads the title from the composer's Title input
+    // on its own; concatenating it here duplicated it as the content's first
+    // line (published posts showed "Title\n\nTitle\n\n...", 2026-10-25).
+    openScheduleDialog(null, body);
   });
   // Insert right after Cancel: [Cancel] [📅 Schedule] [Post wrapper]
   actionRow.insertBefore(btn, cancelBtn.nextSibling);
@@ -998,7 +1010,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <div class="skmw-cal" id="skmw-s-cal"></div>
+        <div id="skmw-s-cal"></div>
         <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(one per line)</span></label>
         <textarea class="skmw-links" id="skmw-s-links" placeholder="https://youtu.be/..."></textarea>
         <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
@@ -1061,7 +1073,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
 
   // Month calendar wired both ways: day click → chosen (+input), manual
   // input edit → chosen (+calendar).
-  const sCal = mountCalendar(document.getElementById('skmw-s-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
+  const sCal = mountPopupCalendar(document.getElementById('skmw-s-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
   $dt.addEventListener('change', () => {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); sCal.refresh(); }
@@ -1255,6 +1267,22 @@ function findComposerGif() {
       if (s && !s.startsWith('data:')) return s;
     }
   }
+  // Native "Add gif" / dropped attachments live OUTSIDE the editor as cards
+  // in the attachments root (2026-10-25: a picker GIF is a bg-image DIV with
+  // NO <img> child). Scan the root after the editor or the GIF silently
+  // vanishes from the scheduled post.
+  const root = document.querySelector('.skool-attachments-root');
+  if (root) {
+    const bgOf = (n) => {
+      const m = (getComputedStyle(n).backgroundImage || '').match(/url\(["']?([^"')]+)["']?\)/);
+      return m ? m[1] : '';
+    };
+    for (const n of [...root.querySelectorAll('img, video'), ...root.querySelectorAll('[style*="background-image" i], .skool-attachment')]) {
+      if (!visible(n)) continue;
+      const s = n.tagName === 'VIDEO' ? (n.currentSrc || n.poster || '') : (n.tagName === 'IMG' ? srcOf(n) : bgOf(n));
+      if (s && !s.startsWith('data:')) return s;
+    }
+  }
   return null;
 }
 
@@ -1321,6 +1349,23 @@ function mountCalendar(container, getChosen, setChosen) {
   };
   render();
   return { refresh: render };
+}
+
+// Compact variant of the month picker: a small toggle button, the grid pops
+// up below it only while picking. The always-visible grid made both dialogs
+// huge (user request 2026-10-25). Same { refresh } contract — external
+// chosen changes (presets, datetime input) update label and grid.
+function mountPopupCalendar(container, getChosen, setChosen) {
+  const fmt = (d) => d.toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  container.classList.add('skmw-cal-wrap');
+  container.innerHTML = `<button type="button" class="skmw-cal-toggle">📅 ${escapeHtml(fmt(getChosen()))}</button><div class="skmw-cal skmw-cal-pop" style="display:none"></div>`;
+  const btn = container.querySelector('.skmw-cal-toggle');
+  const pop = container.querySelector('.skmw-cal-pop');
+  btn.addEventListener('click', (e) => { e.stopPropagation(); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
+  document.addEventListener('click', (e) => { if (!container.contains(e.target)) pop.style.display = 'none'; });
+  const sync = () => { btn.textContent = `📅 ${fmt(getChosen())}`; };
+  const cal = mountCalendar(pop, getChosen, (d) => { setChosen(d); sync(); });
+  return { refresh: () => { cal.refresh(); sync(); } };
 }
 
 // Files the user attached in the Skool composer (images land in the
@@ -1615,7 +1660,7 @@ function renderEditForm(post, container) {
     <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
-    <div class="skmw-cal" id="skmw-e-cal"></div>
+    <div id="skmw-e-cal"></div>
     <label style="margin-top:14px;">Links <span style="font-weight:400;color:#9ca3af;">(one per line)</span></label>
     <textarea class="skmw-links" id="skmw-e-links" placeholder="https://youtu.be/...">${escapeHtml((post.media_urls || []).join('\n'))}</textarea>
     <label class="skmw-row" style="margin-top:10px;cursor:pointer;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"${post.email_members ? ' checked' : ''}> 📧 Send email to all members</label>
@@ -1635,7 +1680,7 @@ function renderEditForm(post, container) {
   }
 
   // Month calendar, wired identically to the schedule dialog.
-  const eCal = mountCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
+  const eCal = mountPopupCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
   $dt.addEventListener('change', () => {
     const v = new Date($dt.value);
     if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); eCal.refresh(); }
