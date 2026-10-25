@@ -996,9 +996,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
   } else {
     schedTitle = (findTitleInput()?.value || '').trim();
   }
-  // Default: tomorrow 09:00 for new posts (a sensible posting slot)
-  let chosen = post ? new Date(post.scheduled_for) : atDayOffset(1, 9, 0);
-  if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
+  // Default: now + 15 minutes for new posts (user request 2026-10-25).
+  let chosen = post ? new Date(post.scheduled_for) : defaultScheduleTime();
+  if (isNaN(chosen.getTime())) chosen = defaultScheduleTime();
 
 
   // Capture the composer GIF once, before the dialog can close the composer —

@@ -443,7 +443,7 @@ function openScheduleMock() {
   const composerTitle = 'How I made my first $1000 with AI';
   const composerBody = 'Just testing, ignore me — this is the body from the Skool composer with\n\nparagraph breaks preserved exactly as editorText returns them.';
   const composerGif = 'https://media0.giphy.com/media/Tz30IjVH9wFich4MLO/giphy.gif';
-  let chosen = atDayOffset(1, 9, 0);
+  let chosen = new Date(Date.now() + 15 * 60 * 1000); chosen.setSeconds(0, 0);
   const minDt = toDtLocal(new Date());
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal skmw-modal-wide">
