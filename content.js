@@ -527,7 +527,7 @@ function injectStyles() {
     .skmw-when-right .skmw-row{min-height:20px;}
     .skmw-cal-time{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #e5e7eb;}
     .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:${INK};cursor:pointer;}
-    .skmw-pop.editing textarea{min-height:280px;}
+    .skmw-pop.editing textarea{min-height:160px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
     .skmw-tab.active{background:${BRAND};border-color:${INK};}
@@ -1906,7 +1906,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.18');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.19');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
