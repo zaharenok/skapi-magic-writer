@@ -94,12 +94,14 @@ async function closeComposer() {
       // matching is dead, and position/z-index heuristics false-positive on
       // the fixed community sidebar. Anchor on the guard TEXT instead, then
       // take the innermost container that also holds buttons.
-      const GUARD_RE = /haven['’]t finished|without finishing|unsaved changes|discard (?:this )?post/i;
+      // Shared guard matcher (skmwNorm handles typographic apostrophes);
+      // replaces the divergent closeComposer-only GUARD_RE (2026-10-25).
+      const GUARD_RE = SKMW_DISCARD_TEXT;
       const findModal = () => {
-        if (!GUARD_RE.test(document.body.textContent || '')) return [];
+        if (!GUARD_RE.test(skmwNorm(document.body.textContent))) return [];
         const hits = [];
         for (const el of document.querySelectorAll('div, section')) {
-          if (!GUARD_RE.test(el.textContent || '')) continue;
+          if (!GUARD_RE.test(skmwNorm(el.textContent))) continue;
           if (!el.querySelector('button, [role="button"]')) continue;
           hits.push(el);
         }
@@ -222,14 +224,22 @@ function getSlug() {
 }
 
 async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (auth) {
-    const jwt = await getJwt();
-    if (!jwt) throw new Error('No Skool session found — log in to skool.com and reopen this page.');
-    headers['Authorization'] = `Bearer ${jwt}`;
-  }
-  const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  const data = await res.json().catch(() => ({}));
+  // Routed via the background service worker: content scripts share the page
+  // context, so a direct fetch to api.skapi.pro is subject to skool.com's
+  // CSP connect-src (regression 2026-10-25). The worker is CSP-exempt and
+  // reads the JWT itself from the auth_token cookie when auth=true.
+  const res = await new Promise((resolve, reject) => {
+    try {
+      chrome.runtime.sendMessage({ type: 'SKMW_FETCH', path, method, body, auth }, (r) => {
+        if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+        if (!r) return reject(new Error('No response from extension background'));
+        resolve(r);
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+  const data = res.data || {};
   if (!res.ok || data.success === false) {
     if (data.subscribe_url) window.__skmwSubUrl = data.subscribe_url;
     throw new Error(data.detail || data.error || `API ${res.status}`);
@@ -305,10 +315,20 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- Skool discard-confirmation dialogs ("You haven't finished your post
 // yet...") — shared patterns for closeComposer and the global watcher ----
+// Skool copy uses typographic apostrophes (haven’t) — normalize before any
+// pattern test so both spellings match (regression 2026-10-25: watcher and
+// closeComposer carried divergent regexes; the watcher missed haven’t).
+const skmwNorm = (s) => (s || '').replace(/[\u2018\u2019\u02BC]/g, "'");
 const SKMW_MODAL_ACCEPT = /leave|discard|yes|confirm|delete|exit|quit|abandon|continue without saving|without finishing|close anyway/i;
 const SKMW_MODAL_FALLBACK = /cancel|discard/i;
 const SKMW_MODAL_DENY = /stay|keep editing|keep|go back|never mind|resume|back to|continue editing|dont leave|don't leave|dont cancel|don't cancel/i;
-const SKMW_DISCARD_TEXT = /haven'?t finished|leave without finishing|discard your (post|draft)/i;
+// One guard matcher for BOTH the watcher and closeComposer (was GUARD_RE).
+const SKMW_DISCARD_TEXT = new RegExp(
+  "haven'?t (?:finished|been published)"
+  + "|(?:post|draft) (?:hasn'?t|is not|not) (?:been )?(?:finished|published)"
+  + "|want to leave|without finishing|unsaved changes"
+  + "|discard (?:your )?(?:post|draft)", "i"
+);
 // Fixed-position elements have offsetParent null — use rects for visibility.
 function skmwVisible(n) {
   const r = n.getBoundingClientRect ? n.getBoundingClientRect() : null;
@@ -323,7 +343,7 @@ function skmwVisible(n) {
 // sits next to it: in a [Cancel][Leave] modal Cancel means STAY.
 function skmwFindAccept(scope) {
   const nodes = [...scope.querySelectorAll('*')].filter(skmwVisible).reverse();
-  const label = (n) => (n.textContent || '').trim();
+  const label = (n) => skmwNorm(n.textContent).trim();
   const hasDeny = nodes.some((n) => { const t = label(n); return t && t.length <= 40 && SKMW_MODAL_DENY.test(t); });
   for (const pattern of [SKMW_MODAL_ACCEPT, SKMW_MODAL_FALLBACK]) {
     const hit = nodes.find((n) => {
@@ -348,7 +368,7 @@ function skmwAcceptHidden(modal) {
   // Stay/Keep-editing one.
   const btns = [...modal.querySelectorAll('button, [role="button"]')];
   return btns.find((b) => {
-    const t = (b.textContent || '').trim();
+    const t = skmwNorm(b.textContent).trim();
     return t && t.length <= 40 && !SKMW_MODAL_DENY.test(t) && SKMW_MODAL_ACCEPT.test(t);
   }) || null;
 }
@@ -376,13 +396,19 @@ function startDiscardWatcher() {
       ...document.querySelectorAll(
         '[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'
       ),
-    ].filter((m) => SKMW_DISCARD_TEXT.test(m.textContent || ''));
+    ].filter((m) => SKMW_DISCARD_TEXT.test(skmwNorm(m.textContent)));
     if (!modals.length) {
       for (const div of document.querySelectorAll('div')) {
         if (!div.querySelector('button, [role="button"]')) continue;
         const st = window.getComputedStyle(div);
-        if (st.position !== 'fixed' || !(parseInt(st.zIndex, 10) > 50)) continue;
-        if (SKMW_DISCARD_TEXT.test(div.textContent || '')) modals.push(div);
+        const r = div.getBoundingClientRect();
+        const coversVp = r.width >= window.innerWidth * 0.5 && r.height >= window.innerHeight * 0.5;
+        // Skool overlays: fixed with modest z-index, or absolute roots that
+        // cover most of the viewport (z-index gate >50 missed z=100..1100
+        // absolute containers — regression 2026-10-25).
+        if (!((st.position === 'fixed' && (parseInt(st.zIndex, 10) > 10 || coversVp))
+              || (st.position === 'absolute' && coversVp))) continue;
+        if (SKMW_DISCARD_TEXT.test(skmwNorm(div.textContent))) modals.push(div);
       }
     }
     if (!modals.length) return;
@@ -404,7 +430,7 @@ function startDiscardWatcher() {
     if (Date.now() < skmwHideGuardsUntil) {
       const hits = [
         ...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'),
-      ].filter((m) => SKMW_DISCARD_TEXT.test(m.textContent || ''));
+      ].filter((m) => SKMW_DISCARD_TEXT.test(skmwNorm(m.textContent)));
       for (const m of hits) {
         m.style.display = 'none';
         const btn = skmwFindAccept(m) || skmwAcceptHidden(m);
@@ -529,6 +555,23 @@ function injectStyles() {
     .skmw-dt:focus{outline:none;border-color:${BRAND};}
     .skmw-timeslot{width:100%;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;margin-top:6px;}
     .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
+    .skmw-cal{margin-top:10px;border:2px solid #e5e7eb;border-radius:10px;padding:8px;background:#fff;}
+    .skmw-cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+    .skmw-cal-m{font-size:13px;font-weight:800;color:${INK};}
+    .skmw-cal-nav{border:none;background:#F3F4F6;border-radius:8px;width:24px;height:24px;font-size:14px;cursor:pointer;line-height:1;color:${INK};padding:0;}
+    .skmw-cal-nav:hover{background:#e5e7eb;}
+    .skmw-cal-w{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;}
+    .skmw-cal-wd{font-size:10px;font-weight:700;color:#9ca3af;text-align:center;padding:2px 0;}
+    .skmw-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .skmw-cal-d{border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:600;color:${INK};padding:5px 0;cursor:pointer;font-family:inherit;}
+    .skmw-cal-d:hover{background:${BRAND}22;}
+    .skmw-cal-pad{visibility:hidden;}
+    .skmw-cal-off{color:#d1d5db;cursor:default;}
+    .skmw-cal-off:hover{background:transparent;}
+    .skmw-cal-sel,.skmw-cal-sel:hover{background:${BRAND};color:${INK};}
+    .skmw-cal-today:not(.skmw-cal-sel){box-shadow:inset 0 0 0 1.5px #e5e7eb;}
+    .skmw-links{width:100%;box-sizing:border-box;min-height:56px;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;color:${INK};background:#fff;resize:vertical;margin-top:2px;}
+    .skmw-links:focus{outline:none;border-color:${BRAND};}
     .skmw-chip{display:inline-flex;align-items:center;gap:6px;width:fit-content;max-width:100%;box-sizing:border-box;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;margin:0 0 10px;}
     .skmw-chip-ok{background:#DCFCE7;border:1px solid #16A34A;color:#166534;}
     .skmw-chip-warn{background:#FEF3C7;border:1px solid #F59E0B;color:#92400E;}
@@ -955,6 +998,10 @@ async function openScheduleDialog(post = null, prefillText = null) {
         <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
+        <div class="skmw-cal" id="skmw-s-cal"></div>
+        <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(one per line)</span></label>
+        <textarea class="skmw-links" id="skmw-s-links" placeholder="https://youtu.be/..."></textarea>
+        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
@@ -1012,10 +1059,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
-  // Editable datetime-local — typing here updates everything
+  // Month calendar wired both ways: day click → chosen (+input), manual
+  // input edit → chosen (+calendar).
+  const sCal = mountCalendar(document.getElementById('skmw-s-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
   $dt.addEventListener('change', () => {
     const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); renderCalendar(); }
+    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); sCal.refresh(); }
   });
 
   const $ntf = document.getElementById('skmw-s-ntf');
@@ -1037,7 +1086,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   const $presets = document.getElementById('skmw-s-presets');
   presets.forEach((p) => {
     const b = el(`<button class="skmw-preset" type="button">${p.label}</button>`);
-    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); });
+    b.addEventListener('click', () => { chosen = p.at(); syncFromChosen(); sCal.refresh(); });
     $presets.appendChild(b);
   });
 
@@ -1074,7 +1123,24 @@ async function openScheduleDialog(post = null, prefillText = null) {
       const gifSearch = gifUrl
         ? gifTermFrom(finalContent)
         : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      // Attachments + links: images dropped in the composer are captured from
+      // the attachments root; GIF already rides media_url (excluded); Links
+      // textarea lines (embed or file URLs) ride along; videos expose no DOM
+      // URL (Mux) — hint the user instead of silently dropping theirs.
+      const captured = captureComposerMediaUrls(gifUrl);
+      const linkLines = ((document.getElementById('skmw-s-links')?.value) || '')
+        .split('\n').map((s) => s.trim()).filter(Boolean);
+      const mediaUrls = [...new Set([...captured.urls, ...linkLines])];
+      if (!isEdit && captured.hasVideo && !linkLines.some((u) => /\.(mp4|webm|mov|avi|mkv)([?#]|$)/i.test(u))) {
+        toast('⚠️ video: paste its URL in Links');
+      }
+      let emailMembers = !!document.getElementById('skmw-s-email')?.checked;
+      if (emailMembers && !confirm('Also email this post to ALL members?')) {
+        emailMembers = false;
+        const $em = document.getElementById('skmw-s-email');
+        if ($em) $em.checked = false;
+      }
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (isEdit && post?.id) {
         // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
         const { language: _langOmitted, ...putBody } = body;
@@ -1184,6 +1250,71 @@ function findComposerGif() {
     }
   }
   return null;
+}
+
+// Month-grid calendar widget shared by the schedule dialog and the edit form
+// (click a day → setChosen keeps the dialog's time; the datetime input's
+// change handler calls .refresh() so manual typing stays in sync).
+function mountCalendar(container, getChosen, setChosen) {
+  const view = new Date(getChosen());
+  view.setDate(1);
+  const render = () => {
+    const chosen = getChosen();
+    const y = view.getFullYear();
+    const m = view.getMonth();
+    const startDow = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sel = new Date(chosen);
+    sel.setHours(0, 0, 0, 0);
+    let cells = '';
+    for (let i = 0; i < startDow; i++) cells += '<span class="skmw-cal-d skmw-cal-pad"></span>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(y, m, d);
+      const past = date < today;
+      const isSel = date.getTime() === sel.getTime();
+      const isToday = date.getTime() === today.getTime();
+      cells += `<button type="button" class="skmw-cal-d${past ? ' skmw-cal-off' : ''}${isSel ? ' skmw-cal-sel' : ''}${isToday && !isSel ? ' skmw-cal-today' : ''}" data-d="${date.getTime()}"${past ? ' disabled' : ''}>${d}</button>`;
+    }
+    container.innerHTML = `
+      <div class="skmw-cal-h">
+        <button type="button" class="skmw-cal-nav" data-nav="-1">‹</button>
+        <span class="skmw-cal-m">${view.toLocaleString('en', { month: 'long', year: 'numeric' })}</span>
+        <button type="button" class="skmw-cal-nav" data-nav="1">›</button>
+      </div>
+      <div class="skmw-cal-w">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d) => `<span class="skmw-cal-wd">${d}</span>`).join('')}</div>
+      <div class="skmw-cal-grid">${cells}</div>`;
+    container.querySelectorAll('.skmw-cal-nav').forEach((b) => b.addEventListener('click', () => {
+      view.setMonth(view.getMonth() + parseInt(b.dataset.nav, 10));
+      render();
+    }));
+    container.querySelectorAll('.skmw-cal-d:not(.skmw-cal-off)').forEach((b) => b.addEventListener('click', () => {
+      const d = new Date(parseInt(b.dataset.d, 10));
+      const cur = getChosen();
+      d.setHours(cur.getHours(), cur.getMinutes(), 0, 0);
+      setChosen(d);
+      render();
+    }));
+  };
+  render();
+  return { refresh: render };
+}
+
+// Files the user attached in the Skool composer (images land in the
+// attachments root OUTSIDE the TipTap doc with assets.skool.com srcs; GIFs
+// picked via 🎬 already ride media_url — pass them as excludeUrl to avoid
+// double-attaching). Videos go through Skool's Mux pipeline and expose no
+// URL in the DOM (recon 2026-10-25) — the caller toasts a hint instead.
+function captureComposerMediaUrls(excludeUrl) {
+  const urls = new Set();
+  document.querySelectorAll('.skool-attachments-root img').forEach((img) => {
+    const s = img.currentSrc || img.src || '';
+    if (s.startsWith('https://assets.skool.com/')) urls.add(s);
+  });
+  if (excludeUrl) urls.delete(excludeUrl);
+  const hasVideo = !!document.querySelector('.skool-mux-attachment');
+  return { urls: [...urls], hasVideo };
 }
 
 // ---------------------------------------------------------------------------
@@ -1458,6 +1589,10 @@ function renderEditForm(post, container) {
     <label style="margin-top:14px;">Publish at</label>
     <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
+    <div class="skmw-cal" id="skmw-e-cal"></div>
+    <label style="margin-top:14px;">Links <span style="font-weight:400;color:#9ca3af;">(one per line)</span></label>
+    <textarea class="skmw-links" id="skmw-e-links" placeholder="https://youtu.be/...">${escapeHtml((post.media_urls || []).join('\n'))}</textarea>
+    <label class="skmw-row" style="margin-top:10px;cursor:pointer;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"${post.email_members ? ' checked' : ''}> 📧 Send email to all members</label>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -1473,9 +1608,11 @@ function renderEditForm(post, container) {
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
+  // Month calendar, wired identically to the schedule dialog.
+  const eCal = mountCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
   $dt.addEventListener('change', () => {
     const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
+    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); eCal.refresh(); }
   });
 
   syncFromChosen();
@@ -1506,7 +1643,17 @@ function renderEditForm(post, container) {
       // provided" (update skips None), so sending null would NOT wipe it —
       // but it also would never re-arm the publisher's GIF fallback for an
       // edited post. Resend the stored term so the GIF still gets attached.
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null };
+      // Links from the textarea replace the stored list ([] clears it — the
+      // server updates any non-None value); email flag rides the checkbox.
+      const linkLines = ((document.getElementById('skmw-e-links')?.value) || '')
+        .split('\n').map((s) => s.trim()).filter(Boolean);
+      let emailMembers = !!document.getElementById('skmw-e-email')?.checked;
+      if (emailMembers && !confirm('Also email this post to ALL members?')) {
+        emailMembers = false;
+        const $em = document.getElementById('skmw-e-email');
+        if ($em) $em.checked = false;
+      }
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkLines, email_members: emailMembers };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();

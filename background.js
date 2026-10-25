@@ -5,6 +5,8 @@
 
 const SKOOL_DOMAIN = '.skool.com';
 
+const API_BASE = 'https://api.skapi.pro';
+
 // Read the Skool JWT from the auth_token HttpOnly cookie (chrome.cookies can
 // see HttpOnly cookies; page scripts and document.cookie cannot).
 function readJwt() {
@@ -38,6 +40,30 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     } catch (e) { /* notifications unavailable — tab toast still shows */ }
     sendResponse({ ok: true });
     return true;
+  }
+  if (msg?.type === 'SKMW_FETCH') {
+    // Proxy api.skapi.pro calls: content scripts run in the page context and
+    // hit skool.com's CSP (connect-src). The service worker is exempt.
+    (async () => {
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (msg.auth) {
+          const jwt = await readJwt();
+          if (!jwt) throw new Error('No Skool session found');
+          headers['Authorization'] = `Bearer ${jwt}`;
+        }
+        const res = await fetch(API_BASE + msg.path, {
+          method: msg.method || 'GET',
+          headers,
+          body: msg.body ? JSON.stringify(msg.body) : undefined,
+        });
+        const data = await res.json().catch(() => ({}));
+        sendResponse({ ok: res.ok, status: res.status, data });
+      } catch (e) {
+        sendResponse({ ok: false, status: 0, data: { detail: String(e && e.message || e) } });
+      }
+    })();
+    return true; // async sendResponse
   }
   return true;
 });
