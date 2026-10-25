@@ -1284,19 +1284,18 @@ function findComposerGif() {
   return null;
 }
 
-// Current topic of the open composer: the toolbar has an unlabeled button
-// whose text is the topic name (sits near the "Add gif" button; user-supplied
-// DOM ground truth 2026-10-25). Empty string when not found.
+// Current topic of the open composer: the unlabeled button right before
+// Cancel in the composer footer (order: … [topic] [Cancel] [Post];
+// user-supplied DOM ground truth 2026-10-25). Empty string when not found.
 function findComposerTopic() {
-  const gif = document.querySelector('button[aria-label="Add gif"]');
-  if (!gif) return '';
-  let row = gif.parentElement;
-  for (let up = 0; up < 4 && row; up++) {
-    const b = [...row.querySelectorAll('button')].find((x) => x.offsetParent && x !== gif
-      && !x.getAttribute('aria-label') && (x.textContent || '').trim()
-      && (x.textContent || '').trim().length < 40);
-    if (b) return b.textContent.trim();
-    row = row.parentElement;
+  const vis = (n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+  const btns = [...document.querySelectorAll('button')].filter(vis);
+  const ci = btns.findIndex((b) => (b.textContent || '').trim() === 'Cancel');
+  if (ci < 0) return '';
+  for (let i = ci - 1; i >= 0; i--) {
+    const b = btns[i];
+    const t = (b.textContent || '').trim();
+    if (t && !b.getAttribute('aria-label') && t !== 'Post' && t.length < 40) return t;
   }
   return '';
 }
