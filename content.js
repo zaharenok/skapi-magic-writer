@@ -1039,7 +1039,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
             <div id="skmw-s-cal"></div>
           </div>
           <div class="skmw-when-right">
-            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-gif" style="margin:0;"${(composerGif || lastGifTerm) ? ' checked' : ''}> 🎬 GIF</label>
+            ${(composerGif || lastGifTerm) ? `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-gif" style="margin:0;" checked> 🎬 GIF</label>` : ''}
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
           </div>
@@ -1788,7 +1788,7 @@ function renderEditForm(post, container) {
     </div>
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
-    ${(() => { const hasGif = !!(post.media_url || gifOn); return `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;"${hasGif ? ' checked' : ''}> 🎬 GIF ${hasGif ? '✓' : '(none)'}</label>`; })()}
+    ${(() => { const hasGif = !!(post.media_url || gifOn); return hasGif ? `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;" checked> 🎬 GIF ✓</label>` : ''; })()}
     <label style="margin-top:14px;">Publish at</label>
     <div id="skmw-e-cal"></div>
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
@@ -1898,7 +1898,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.25');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.26');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
