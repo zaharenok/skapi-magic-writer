@@ -1123,7 +1123,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
       // GIF: URL captured when the dialog opened (the composer may be closed
       // by the time this runs) or the URL saved on the post when editing.
       // The search term is stored only as the publisher's fallback.
-      const gifUrl = isEdit ? (post?.media_url || null) : composerGif;
+      // Re-query at Save: the composer may have gained media after the
+      // dialog opened (native picker lands in the attachments root).
+      const gifUrl = isEdit ? (post?.media_url || null) : (composerGif || findComposerGif());
       const ed = findEditor();
       // Loose presence check is safe: lastGifTerm is only set by OUR successful
       // insertGif, so any img/video in the composer right after attaching a GIF
