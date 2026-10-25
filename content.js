@@ -468,7 +468,7 @@ function injectStyles() {
     .skmw-modal h2{margin:0 0 4px;font-size:20px;color:#0A0A0A;cursor:move;user-select:none;}
     .skmw-modal .sub{color:#374151;font-size:13px;margin:0 0 16px;}
     .skmw-modal label{display:block;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 6px;color:#374151;}
-    .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;}
+    .skmw-modal textarea,.skmw-modal input[type=text],.skmw-modal input[type=password]{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:${INK};}
     .skmw-modal textarea{min-height:120px;resize:vertical;}
     .skmw-modal input:focus,.skmw-modal textarea:focus{outline:none;border-color:${BRAND};}
     .skmw-row{display:flex;align-items:center;gap:8px;font-size:13px;color:#374151;}
@@ -519,10 +519,12 @@ function injectStyles() {
     .skmw-addlink:hover{border-color:${BRAND};color:${BRAND};}
     .skmw-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
     .skmw-modal label.skmw-row{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;line-height:1.2;margin:0;}
-    .skmw-when-row{display:flex;gap:14px;align-items:flex-start;margin-top:14px;}
+    .skmw-when-row{display:flex;gap:14px;align-items:center;margin-top:14px;}
     .skmw-when-left{width:225px;flex-shrink:0;}
-    .skmw-when-left .skmw-cal-toggle{width:100%;}
+    .skmw-when-left label{margin:0 0 4px;}
+    .skmw-when-left .skmw-cal-toggle{width:100%;box-sizing:border-box;padding:10px 12px;font-size:14px;line-height:1.2;}
     .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+    .skmw-when-right .skmw-row{min-height:20px;}
     .skmw-pop.editing textarea{min-height:280px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -560,7 +562,7 @@ function injectStyles() {
     .skmw-ctx-count{margin-left:auto;padding:4px 6px;border:1.5px solid #e5e7eb;border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#374151;cursor:pointer;}
     .skmw-ctx-count:disabled{opacity:.5;cursor:not-allowed;}
     /* Schedule modal: single column at every width (matches the approved mock) */
-    .skmw-modal-wide{max-width:560px;}
+    .skmw-modal-wide{max-width:520px;}
     .skmw-sched-cols{display:flex;flex-direction:column;gap:16px;}
     .skmw-sched-left{min-width:0;display:flex;flex-direction:column;gap:6px;}
     .skmw-sched-left>label{display:flex;align-items:center;min-height:24px;margin:0;font-weight:600;font-size:13px;color:#374151;text-transform:none;}
@@ -1870,7 +1872,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.11');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.12');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
