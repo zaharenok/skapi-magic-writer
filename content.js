@@ -1773,7 +1773,6 @@ function renderEditForm(post, container) {
   let chosen = new Date(post.scheduled_for);
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
   const gifOn = !!post.gif_search;
-  const minDt = toDtLocal(new Date());
 
   container.closest('.skmw-pop')?.classList.add('editing');
   container.innerHTML = `
@@ -1781,20 +1780,26 @@ function renderEditForm(post, container) {
       <button class="skmw-btn-back" id="skmw-edit-back">← Back to list</button>
       <h3>✏️ Edit scheduled post</h3>
     </div>
-    <label>Title</label>
-    <input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title">
-    <label style="margin-top:10px;">Topic</label>
-    <input type="text" id="skmw-e-topic" value="${escapeHtml(post.category || '')}" placeholder="(group default)">
+    <div class="skmw-s-toprow">
+      <div class="col1"><label>Title</label><input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title"></div>
+      <div class="col2"><label>Topic</label><input type="text" id="skmw-e-topic" list="skmw-e-topic-options" value="${escapeHtml(post.category || '')}" placeholder="(group default)"><datalist id="skmw-e-topic-options">${post.category ? `<option value="${escapeHtml(post.category)}">` : ''}</datalist></div>
+    </div>
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<div style="font-size:12px;${hasGif ? 'color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;' : 'color:#6b7280;background:#F9FAFB;border:1.5px solid #e5e7eb;'}border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${hasGif ? '✓ ' + gifDesc(post.media_url, post.gif_search) : '✗ none'}</div>`; })()}
-    <label style="margin-top:14px;">Publish at</label>
-    <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+    <div class="skmw-when-row">
+      <div class="skmw-when-left">
+        <label style="display:block;">Publish at</label>
+        <div id="skmw-e-cal"></div>
+      </div>
+      <div class="skmw-when-right">
+        <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"${post.email_members ? ' checked' : ''}> 📧 Send email to all members</label>
+      </div>
+    </div>
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
-    <div id="skmw-e-cal"></div>
-    <label style="margin-top:14px;">Links <span style="font-weight:400;color:#9ca3af;">(one per line)</span></label>
-    <textarea class="skmw-links" id="skmw-e-links" placeholder="https://youtu.be/...">${escapeHtml((post.media_urls || []).join('\n'))}</textarea>
-    <label class="skmw-row" style="margin-top:10px;cursor:pointer;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"${post.email_members ? ' checked' : ''}> 📧 Send email to all members</label>
+    <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
+    <div id="skmw-e-linklist"></div>
+    <button type="button" class="skmw-addlink" id="skmw-e-addlink">＋ Add link</button>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -1802,22 +1807,27 @@ function renderEditForm(post, container) {
     <div class="skmw-err" id="skmw-e-err"></div>
   `;
 
-  const $dt = document.getElementById('skmw-e-dt');
   const $past = document.getElementById('skmw-e-past');
 
   function syncFromChosen() {
-    $dt.value = toDtLocal(chosen);
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
   // Month calendar, wired identically to the schedule dialog.
   const eCal = mountPopupCalendar(document.getElementById('skmw-e-cal'), () => chosen, (d) => { chosen = d; syncFromChosen(); });
-  $dt.addEventListener('change', () => {
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); eCal.refresh(); }
-  });
 
-  syncFromChosen();
+  // Checkbox link rows (max 3), same pattern as the schedule dialog.
+  const linkList = document.getElementById('skmw-e-linklist');
+  const addLinkRow = (url) => {
+    if (linkList.children.length >= 3) return;
+    const row = el(`<div class="skmw-linkrow"><input type="checkbox" checked><input type="text" placeholder="https://youtu.be/..." value="${escapeHtml(url || '')}"></div>`);
+    linkList.appendChild(row);
+  };
+  (post.media_urls || []).slice(0, 3).forEach(addLinkRow);
+  document.getElementById('skmw-e-addlink').addEventListener('click', () => {
+    if (linkList.children.length >= 3) { toast('⚠️ Max 3 links per post'); return; }
+    addLinkRow('');
+  });
 
   document.getElementById('skmw-edit-back').addEventListener('click', () => {
     renderList();
@@ -1828,10 +1838,6 @@ function renderEditForm(post, container) {
 
   document.getElementById('skmw-e-save').addEventListener('click', async () => {
     console.log('[skmw] popup update clicked', { id: post.id, chosen: chosen.toISOString() });
-    // Read the field directly — a change event may not have fired yet if the
-    // user edits the time and clicks Update immediately.
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) chosen = v;
     const finalContent = document.getElementById('skmw-e-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
     const titleVal = document.getElementById('skmw-e-title').value.trim();
@@ -1845,17 +1851,19 @@ function renderEditForm(post, container) {
       // provided" (update skips None), so sending null would NOT wipe it —
       // but it also would never re-arm the publisher's GIF fallback for an
       // edited post. Resend the stored term so the GIF still gets attached.
-      // Links from the textarea replace the stored list ([] clears it — the
-      // server updates any non-None value); email flag rides the checkbox.
-      const linkLines = ((document.getElementById('skmw-e-links')?.value) || '')
-        .split('\n').map((s) => s.trim()).filter(Boolean);
+      // Links: only rows with a checked box ride along ([] clears the list —
+      // the server updates any non-None value); email flag rides the checkbox.
+      const linkRows = [...document.querySelectorAll('#skmw-e-linklist .skmw-linkrow')]
+        .filter((r) => r.querySelector('input[type="checkbox"]').checked)
+        .map((r) => (r.querySelector('input[type="text"]').value || '').trim())
+        .filter((v) => /^https?:\/\//i.test(v));
       let emailMembers = !!document.getElementById('skmw-e-email')?.checked;
       if (emailMembers && !confirm('Also email this post to ALL members?')) {
         emailMembers = false;
         const $em = document.getElementById('skmw-e-email');
         if ($em) $em.checked = false;
       }
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), category: (document.getElementById('skmw-e-topic')?.value || '').trim(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkLines, email_members: emailMembers };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), category: (document.getElementById('skmw-e-topic')?.value || '').trim(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkRows, email_members: emailMembers };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
@@ -1894,7 +1902,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.15');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.16');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

@@ -89,7 +89,7 @@
   .skmw-when-left .skmw-cal-toggle{box-sizing:border-box;padding:10px 12px;font-size:14px;line-height:1.2;}
   .skmw-when-right .skmw-row{min-height:20px;}
   .skmw-when-left{width:225px;flex-shrink:0;}
-  .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+  .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:flex-end;padding-bottom:2px;}
   .skmw-cal-toggle{width:100%;text-align:left;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#0A0A0A;}
   .skmw-cal-time{display:flex;gap:6px;margin-top:6px;}
   .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#0A0A0A;cursor:pointer;}
@@ -380,14 +380,28 @@ function renderEditForm(post, container) {
       <button class="skmw-btn-back" id="skmw-edit-back">← Back to list</button>
       <h3>✏️ Edit scheduled post</h3>
     </div>
-    <label>Title</label>
-    <input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title">
+    <div class="skmw-s-toprow">
+      <div class="col1"><label>Title</label><input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title"></div>
+      <div class="col2"><label>Topic</label><input type="text" id="skmw-e-topic" value="${escapeHtml(post.category || '')}" placeholder="(group default)"></div>
+    </div>
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<div style="font-size:12px;${hasGif ? 'color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;' : 'color:#6b7280;background:#F9FAFB;border:1.5px solid #e5e7eb;'}border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${hasGif ? '✓ ' + gifDesc(post.media_url, post.gif_search) : '✗ none'}</div>`; })()}
-    <label style="margin-top:14px;">Publish at</label>
-    <input type="datetime-local" class="skmw-dt" id="skmw-e-dt" min="${minDt}" value="${toDtLocal(chosen)}">
-    <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
+    <div class="skmw-when-row">
+      <div class="skmw-when-left">
+        <label style="display:block;">Publish at</label>
+        <button type="button" class="skmw-cal-toggle" id="skmw-e-toggle"></button>
+        <div class="skmw-cal-time"><select id="skmw-e-h"></select><select id="skmw-e-m"></select></div>
+      </div>
+      <div class="skmw-when-right">
+        <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"> 📧 Send email to all members</label>
+      </div>
+    </div>
+    <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
+    <div id="skmw-e-linklist">
+      ${(post.media_urls || []).slice(0, 3).map((u) => `<div class="skmw-linkrow"><input type="checkbox" checked><input type="text" value="${escapeHtml(u)}"></div>`).join('') || '<div class="skmw-linkrow"><input type="checkbox" checked><input type="text" placeholder="https://youtu.be/..." value=""></div>'}
+    </div>
+    <button type="button" class="skmw-addlink" id="skmw-e-addlink">＋ Add link</button>
     <div class="skmw-edit-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-e-delete" style="border-color:#dc2626;color:#dc2626;">🗑 Delete</button>
       <button class="skmw-btn skmw-btn-pink" id="skmw-e-save">Update</button>
@@ -395,15 +409,20 @@ function renderEditForm(post, container) {
     <div class="skmw-err" id="skmw-e-err"></div>
   `;
 
-  const $dt = document.getElementById('skmw-e-dt');
+  const $tgl = document.getElementById('skmw-e-toggle');
   const $past = document.getElementById('skmw-e-past');
+  const $h = document.getElementById('skmw-e-h');
+  const $m = document.getElementById('skmw-e-m');
+  for (let h = 0; h < 24; h++) $h.add(new Option(String(h).padStart(2, '0'), String(h)));
+  for (let m = 0; m < 60; m++) $m.add(new Option(String(m).padStart(2, '0'), String(m)));
+  $h.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
+  $m.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
 
   function syncFromChosen() {
-    $dt.value = toDtLocal(chosen);
+    $tgl.textContent = '📅 ' + chosen.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    $h.value = String(chosen.getHours()); $m.value = String(chosen.getMinutes());
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
-  $dt.addEventListener('change', () => {
-  });
   syncFromChosen();
 
   document.getElementById('skmw-edit-back').addEventListener('click', () => renderList());
