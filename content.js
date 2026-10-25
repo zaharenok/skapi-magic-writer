@@ -979,6 +979,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // Capture the composer GIF once, before the dialog can close the composer —
   // the save handler reuses this snapshot instead of re-querying the DOM.
   const composerGif = isEdit ? null : findComposerGif();
+  const composerTopic = findComposerTopic();
 
   const hasComposerMedia = !!(findEditor() && findEditor().querySelector('img, video'));
   const gifSavedNote = composerGif || lastGifTerm;
@@ -994,6 +995,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         <label>Title</label><input type="text" id="skmw-s-title" value="${escapeHtml(schedTitle)}" placeholder="Post title">
+        <label style="margin-top:10px;">Topic</label><input type="text" id="skmw-s-topic" value="${escapeHtml(composerTopic)}" placeholder="(group default)">
         <label style="margin-top:14px;">Post content</label><textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(content)}</textarea>
       </div>
       <div class="skmw-sched-right">
@@ -1150,7 +1152,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
       }
       // Publishes into the community the post was written in; the server
       // re-checks access via the stored JWT at publish time.
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, category: (document.getElementById('skmw-s-topic')?.value || '').trim(), gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (isEdit && post?.id) {
         // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
         const { language: _langOmitted, ...putBody } = body;
@@ -1280,6 +1282,23 @@ function findComposerGif() {
     }
   }
   return null;
+}
+
+// Current topic of the open composer: the toolbar has an unlabeled button
+// whose text is the topic name (sits near the "Add gif" button; user-supplied
+// DOM ground truth 2026-10-25). Empty string when not found.
+function findComposerTopic() {
+  const gif = document.querySelector('button[aria-label="Add gif"]');
+  if (!gif) return '';
+  let row = gif.parentElement;
+  for (let up = 0; up < 4 && row; up++) {
+    const b = [...row.querySelectorAll('button')].find((x) => x.offsetParent && x !== gif
+      && !x.getAttribute('aria-label') && (x.textContent || '').trim()
+      && (x.textContent || '').trim().length < 40);
+    if (b) return b.textContent.trim();
+    row = row.parentElement;
+  }
+  return '';
 }
 
 // One document-level capture-phase listener for the SPA lifetime. The video
@@ -1650,6 +1669,8 @@ function renderEditForm(post, container) {
     </div>
     <label>Title</label>
     <input type="text" id="skmw-e-title" value="${escapeHtml(title)}" placeholder="Post title">
+    <label style="margin-top:10px;">Topic</label>
+    <input type="text" id="skmw-e-topic" value="${escapeHtml(post.category || '')}" placeholder="(group default)">
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || post.gif_search); return `<div style="font-size:12px;${hasGif ? 'color:#166534;background:#DCFCE7;border:1.5px solid #16A34A;' : 'color:#6b7280;background:#F9FAFB;border:1.5px solid #e5e7eb;'}border-radius:8px;padding:8px 10px;margin-top:8px;">🎬 GIF: ${hasGif ? '✓ ' + gifDesc(post.media_url, post.gif_search) : '✗ none'}</div>`; })()}
@@ -1720,7 +1741,7 @@ function renderEditForm(post, container) {
         const $em = document.getElementById('skmw-e-email');
         if ($em) $em.checked = false;
       }
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkLines, email_members: emailMembers };
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), category: (document.getElementById('skmw-e-topic')?.value || '').trim(), gif_search: gifOn ? (post.gif_search || null) : null, media_urls: linkLines, email_members: emailMembers };
       await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...body, id: post.id } });
       toast('✅ Post updated');
       await loadScheduled();
@@ -1759,7 +1780,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.2');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.3');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
