@@ -12,14 +12,6 @@
     h1 .logo { width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--purple), var(--purple2)); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:20px; transform: skewX(-8deg); }
     p.sub { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
     p.note { background:#EEF2FF; border:1.5px solid #C7D2FE; color:#3730A3; border-radius:10px; padding:10px 12px; font-size:13px; margin: 16px 0; }
-    label { display: block; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; margin: 16px 0 6px; }
-    input { width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 14px; font-family: ui-monospace, monospace; }
-    input:focus { outline: none; border-color: var(--purple2); }
-    .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
-    button { margin-top: 20px; padding: 12px 20px; background: var(--purple); color: #fff; border: none; border-radius: 10px; font-weight: 800; font-size: 15px; cursor: pointer; }
-    button:hover { background: var(--purple2); }
-    #status { margin-top: 12px; font-size: 14px; font-weight: 600; min-height: 20px; }
-    .ok { color: #16a34a; }
   </style>
 </head>
 <body>
@@ -33,14 +25,10 @@
       you're logged in to Skool.
     </div>
 
-    <label for="slug">Default Community Slug (optional)</label>
-    <input id="slug" type="text" placeholder="ai-pays-my-bills-7018">
-    <div class="hint">Used when scheduling posts. If empty, it's auto-detected from the current Skool URL.</div>
-
-    <button id="save">💾 Save</button>
-    <div id="status"></div>
+    <div class="note">
+      📌 Scheduled posts are always published to the community set in the
+      Skapi dashboard — no per-user settings required.
+    </div>
   </div>
-
-  <script src="options.js"></script>
 </body>
 </html>

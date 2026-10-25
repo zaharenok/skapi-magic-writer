@@ -209,20 +209,6 @@ function getJwt(retried) {
     }
   });
 }
-function getSlug() {
-  return new Promise((resolve) => {
-    const fromUrl = (location.pathname.split('/').filter(Boolean)[0]) || '';
-    try {
-      chrome.storage.local.get(['communitySlug'], (r) => {
-        resolve((r && r.communitySlug) || fromUrl);
-      });
-    } catch (e) {
-      console.warn('[skmw] storage unavailable:', e && e.message);
-      resolve(fromUrl);
-    }
-  });
-}
-
 async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
   // Routed via the background service worker: content scripts share the page
   // context, so a direct fetch to api.skapi.pro is subject to skool.com's
@@ -658,7 +644,6 @@ let dialogOpen = false;
 async function openMagicDialog() {
   if (dialogOpen) return;
   dialogOpen = true;
-  const slug = await getSlug();
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal">
@@ -954,7 +939,6 @@ const gifDesc = (u, term) => u
 async function openScheduleDialog(post = null, prefillText = null) {
   if (dialogOpen) return;
   dialogOpen = true;
-  const slug = await getSlug();
   const isEdit = !!post;
 
   let content = '';
@@ -1156,7 +1140,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
         const $em = document.getElementById('skmw-s-email');
         if ($em) $em.checked = false;
       }
-      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), community_slug: slug, community_url: location.href, gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
+      // Publish target (community) is set server-side from the dashboard —
+      // the extension no longer chooses where posts go (2026-10-25).
+      const body = { content: finalContent, title: titleVal, scheduled_for: chosen.toISOString(), gif_search: gifSearch, media_url: gifUrl, media_urls: mediaUrls.length ? mediaUrls : null, email_members: emailMembers, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (isEdit && post?.id) {
         // PUT must NOT send language: absent field → exclude_unset → stored lang preserved
         const { language: _langOmitted, ...putBody } = body;
@@ -1765,7 +1751,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.0');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.1');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
