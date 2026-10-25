@@ -1615,11 +1615,12 @@ function renderList() {
     return st === 'pending';
   };
   const items = calState.posts.filter(byTab).sort((a, b) => {
-    // Upcoming: soonest to fire first. Sent/Failed: newest at the top.
+    // Upcoming: soonest to fire first; equal times → the newer post on top.
+    // Sent/Failed: newest at the top.
     if (calState.tab !== 'upcoming') {
       return new Date(b.published_at || b.scheduled_for) - new Date(a.published_at || a.scheduled_for);
     }
-    return new Date(a.scheduled_for) - new Date(b.scheduled_for);
+    return (new Date(a.scheduled_for) - new Date(b.scheduled_for)) || (Number(b.id) - Number(a.id));
   });
   if (!items.length) {
     list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">🪄 Click here to see the magic</button></div>`;
@@ -1839,7 +1840,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.6');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.7');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

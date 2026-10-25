@@ -100,6 +100,8 @@
   .skmw-sched-right{min-width:0;}
   .skmw-sched-right h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;}
   .skmw-sched-right h4:not(:first-child){margin-top:16px;}
+  .skmw-links{width:100%;box-sizing:border-box;min-height:56px;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:13px;font-family:inherit;line-height:1.4;color:#0A0A0A;background:#fff;resize:vertical;margin-top:2px;}
+  .skmw-links:focus{outline:none;border-color:#FF90E8;}
   .skmw-dt{width:100%;box-sizing:border-box;padding:9px 10px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;color:#0A0A0A;background:#fff;margin-top:2px;}
   .skmw-dt:focus{outline:none;border-color:#FF90E8;}
   .skmw-past-note{font-size:11px;color:#dc2626;margin-top:6px;display:none;}
@@ -135,6 +137,9 @@ function toast(msg){document.querySelector('.skmw-toast')?.remove();const t=el(`
 let calState = {
   tab: 'upcoming',
   posts: [
+    { id: 15, status: 'pending', community_slug: 'ai-pays-my-bills-7018', community_url: 'https://www.skool.com/ai-pays-my-bills-7018',
+      content: 'Same time as the post below — but created later, so it sits on top (tie-break by id).',
+      scheduled_for: new Date(Date.now() + 3600e3).toISOString(), media_url: null, gif_search: null },
     { id: 13, status: 'pending', community_slug: 'ai-pays-my-bills-7018', community_url: 'https://www.skool.com/ai-pays-my-bills-7018',
       content: 'Just testing, ignore me\n\nMade an account here to check how the posts look with formatting, links and everything else.',
       scheduled_for: new Date(Date.now() + 3600e3).toISOString(), media_url: null, gif_search: null },
@@ -206,7 +211,7 @@ function renderList() {
   const items = calState.posts.filter(byTab).sort((a, b) =>
     calState.tab !== 'upcoming'
       ? new Date(b.published_at || b.scheduled_for) - new Date(a.published_at || a.scheduled_for)
-      : new Date(a.scheduled_for) - new Date(b.scheduled_for));
+      : (new Date(a.scheduled_for) - new Date(b.scheduled_for)) || (Number(b.id) - Number(a.id)));
   if (!items.length) {
     list.innerHTML = `<div class="skmw-empty">Nothing here yet.<br>Click 📅 Schedule next to the composer.<br><button class="skmw-btn skmw-btn-pink skmw-empty-magic" type="button">🪄 Click here to see the magic</button></div>`;
     list.querySelector('.skmw-empty-magic')?.addEventListener('click', () => toast('(в макете — открывается Magic-диалог)'));
@@ -386,8 +391,12 @@ function openScheduleMock() {
       <div class="skmw-sched-left">
         <label>Title</label>
         <input type="text" id="skmw-s-title" value="${escapeHtml(composerTitle)}" placeholder="Post title">
+        <label style="margin-top:10px;">Topic</label>
+        <input type="text" id="skmw-s-topic" value="General discussion" placeholder="(group default)">
         <label style="margin-top:14px;">Post content</label>
         <textarea id="skmw-s-content" placeholder="Write your post...">${escapeHtml(composerBody)}</textarea>
+        <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(one per line)</span></label>
+        <textarea class="skmw-links" id="skmw-s-links" placeholder="https://youtu.be/...">https://youtu.be/DWVfHzwfNDA</textarea>
       </div>
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
@@ -395,6 +404,7 @@ function openScheduleMock() {
         <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
         <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
+        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
         <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;" checked> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
