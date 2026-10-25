@@ -523,7 +523,7 @@ function injectStyles() {
     .skmw-when-left{width:225px;flex-shrink:0;}
     .skmw-when-left label{margin:0 0 4px;}
     .skmw-when-left .skmw-cal-toggle{width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.2;}
-    .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:flex-end;padding-bottom:2px;}
+    .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:center;}
     .skmw-when-right .skmw-row{min-height:20px;}
     .skmw-cal-time{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #e5e7eb;}
     .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:${INK};cursor:pointer;}
@@ -1038,6 +1038,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
             <div id="skmw-s-cal"></div>
           </div>
           <div class="skmw-when-right">
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-gif" style="margin:0;"${(composerGif || lastGifTerm) ? ' checked' : ''}> 🎬 GIF</label>
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
           </div>
@@ -1157,12 +1158,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
     btn.disabled = true; btn.textContent = '⏳ Saving...';
     hideErr();
     try {
-      // GIF: URL captured when the dialog opened (the composer may be closed
-      // by the time this runs) or the URL saved on the post when editing.
-      // The search term is stored only as the publisher's fallback.
+      // GIF: the 🎬 checkbox is the user's explicit yes/no — unchecked means
+      // no GIF and no search fallback even if the composer has one.
       // Re-query at Save: the composer may have gained media after the
       // dialog opened (native picker lands in the attachments root).
-      const gifUrl = isEdit ? (post?.media_url || null) : (composerGif || findComposerGif());
+      const gifChecked = !!document.getElementById('skmw-s-gif')?.checked;
+      const gifUrl = gifChecked ? (isEdit ? (post?.media_url || null) : (composerGif || findComposerGif())) : null;
       const ed = findEditor();
       // Loose presence check is safe: lastGifTerm is only set by OUR successful
       // insertGif, so any img/video in the composer right after attaching a GIF
@@ -1170,7 +1171,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
       // so sniffing .gif srcs misses most of them. Worst case: the publisher's
       // search fallback attaches a search-GIF — strictly better than no GIF.
       const gifNodePresent = !!(ed && ed.querySelector('img, video'));
-      const gifPresent = !!gifUrl || (!isEdit && !!lastGifTerm && gifNodePresent);
+      const gifPresent = !!gifUrl || (gifChecked && !isEdit && !!lastGifTerm && gifNodePresent);
       const gifSearch = gifUrl
         ? gifTermFrom(finalContent)
         : (gifPresent ? (lastGifTerm || gifTermFrom(finalContent)) : null);
@@ -1905,7 +1906,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.17');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.18');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

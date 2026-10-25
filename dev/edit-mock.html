@@ -89,7 +89,7 @@
   .skmw-when-left .skmw-cal-toggle{box-sizing:border-box;padding:10px 12px;font-size:14px;line-height:1.2;}
   .skmw-when-right .skmw-row{min-height:20px;}
   .skmw-when-left{width:225px;flex-shrink:0;}
-  .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:flex-end;padding-bottom:2px;}
+  .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:center;}
   .skmw-cal-toggle{width:100%;text-align:left;padding:8px 10px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#0A0A0A;}
   .skmw-cal-time{display:flex;gap:6px;margin-top:6px;}
   .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#0A0A0A;cursor:pointer;}
@@ -497,6 +497,7 @@ function openScheduleMock() {
             <div class="skmw-cal-time"><select id="skmw-s-h"></select><select id="skmw-s-m"></select></div>
           </div>
           <div class="skmw-when-right">
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-gif" style="margin:0;" checked> 🎬 GIF</label>
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;" checked> 🔔 Notify when it goes out</label>
           </div>
