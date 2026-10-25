@@ -523,7 +523,7 @@ function injectStyles() {
     .skmw-when-left{width:225px;flex-shrink:0;}
     .skmw-when-left label{margin:0 0 4px;}
     .skmw-when-left .skmw-cal-toggle{width:100%;box-sizing:border-box;padding:8px 10px;font-size:13px;font-weight:600;line-height:1.2;}
-    .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+    .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:flex-end;padding-bottom:2px;}
     .skmw-when-right .skmw-row{min-height:20px;}
     .skmw-cal-time{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #e5e7eb;}
     .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:${INK};cursor:pointer;}
@@ -1107,12 +1107,17 @@ async function openScheduleDialog(post = null, prefillText = null) {
   // publication only while its checkbox is checked; edit the text to swap
   // a URL, ＋ adds an empty row.
   const linkList = document.getElementById('skmw-s-linklist');
+  // Anti-spam UI cap: at most 3 link rows per post.
   const addLinkRow = (url) => {
+    if (linkList.children.length >= 3) return;
     const row = el(`<div class="skmw-linkrow"><input type="checkbox" checked><input type="text" placeholder="https://youtu.be/..." value="${escapeHtml(url || '')}"></div>`);
     linkList.appendChild(row);
   };
-  openVideoLinks.forEach(addLinkRow);
-  document.getElementById('skmw-s-addlink').addEventListener('click', () => addLinkRow(''));
+  openVideoLinks.slice(0, 3).forEach(addLinkRow);
+  document.getElementById('skmw-s-addlink').addEventListener('click', () => {
+    if (linkList.children.length >= 3) { toast('⚠️ Max 3 links per post'); return; }
+    addLinkRow('');
+  });
 
   const $ntf = document.getElementById('skmw-s-ntf');
   if ($ntf) {
@@ -1889,7 +1894,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.14');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.15');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
