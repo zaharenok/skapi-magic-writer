@@ -82,7 +82,13 @@
   .skmw-s-inline{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;background:#fff;color:#374151;border:1.5px solid #d1d5db;border-radius:8px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin:0 6px;line-height:1;transition:background .12s,border-color .12s;}
   .skmw-s-inline:hover{background:#f9fafb;border-color:#9ca3af;}
   /* Schedule dialog: presets, publish time, notify */
-  .skmw-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .skmw-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .skmw-row{display:inline-flex;align-items:center;gap:6px;}
+  .skmw-when-row{display:flex;gap:14px;align-items:flex-start;margin-top:14px;}
+  .skmw-when-left{width:225px;flex-shrink:0;}
+  .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+  .skmw-cal-toggle{width:100%;text-align:left;padding:9px 12px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#0A0A0A;}
+  .skmw-cal-toggle:hover{border-color:#FF90E8;}
   .skmw-preset{padding:6px 10px;background:#fff;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#374151;}
   .skmw-preset:hover{border-color:#FF90E8;color:#0A0A0A;}
   .skmw-preset.active{background:#FF90E8;border-color:#0A0A0A;color:#0A0A0A;}
@@ -392,8 +398,6 @@ function renderEditForm(post, container) {
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
   $dt.addEventListener('change', () => {
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
   syncFromChosen();
 
@@ -459,11 +463,17 @@ function openScheduleMock() {
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
         <div class="skmw-presets" id="skmw-s-presets"></div>
-        <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
-        <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+        <div class="skmw-when-row">
+          <div class="skmw-when-left">
+            <label style="display:block;">Publish at</label>
+            <button type="button" class="skmw-cal-toggle" id="skmw-s-toggle"></button>
+          </div>
+          <div class="skmw-when-right">
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;" checked> 🔔 Notify when it goes out</label>
+          </div>
+        </div>
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"> 📧 Send email to all members</label>
-        <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;" checked> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-s-cancel">Cancel</button>
@@ -475,15 +485,13 @@ function openScheduleMock() {
   document.body.appendChild(overlay);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
   const close = () => overlay.remove();
-  const $dt = document.getElementById('skmw-s-dt');
+  const $tgl = document.getElementById('skmw-s-toggle');
   const $past = document.getElementById('skmw-s-past');
   function syncFromChosen() {
-    $dt.value = toDtLocal(chosen);
+    $tgl.textContent = '📅 ' + chosen.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
   $dt.addEventListener('change', () => {
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); }
   });
   syncFromChosen();
   const presets = [

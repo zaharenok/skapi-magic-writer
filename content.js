@@ -517,6 +517,12 @@ function injectStyles() {
     .skmw-linkrow input[type=text]:focus{outline:none;border-color:${BRAND};}
     .skmw-addlink{margin-top:8px;padding:6px 12px;border:1.5px dashed #d1d5db;background:#fff;border-radius:8px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;font-family:inherit;}
     .skmw-addlink:hover{border-color:${BRAND};color:${BRAND};}
+    .skmw-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+    .skmw-modal label.skmw-row{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;line-height:1.2;margin:0;}
+    .skmw-when-row{display:flex;gap:14px;align-items:flex-start;margin-top:14px;}
+    .skmw-when-left{width:225px;flex-shrink:0;}
+    .skmw-when-left .skmw-cal-toggle{width:100%;}
+    .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
     .skmw-pop.editing textarea{min-height:280px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -991,7 +997,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
   if (isNaN(chosen.getTime())) chosen = atDayOffset(1, 9, 0);
 
 
-  const minDt = toDtLocal(new Date());
   // Capture the composer GIF once, before the dialog can close the composer —
   // the save handler reuses this snapshot instead of re-querying the DOM.
   const composerGif = isEdit ? null : findComposerGif();
@@ -1022,15 +1027,20 @@ async function openScheduleDialog(post = null, prefillText = null) {
       <div class="skmw-sched-right">
         <h4>Quick schedule</h4>
         <div class="skmw-presets" id="skmw-s-presets"></div>
-        <label style="margin-top:16px;">Publish at <span style="text-transform:none;font-weight:400;color:#9ca3af;">(editable)</span></label>
-        <input type="datetime-local" class="skmw-dt" id="skmw-s-dt" min="${minDt}" value="${toDtLocal(chosen)}">
+        <div class="skmw-when-row">
+          <div class="skmw-when-left">
+            <label style="display:block;">Publish at</label>
+            <div id="skmw-s-cal"></div>
+          </div>
+          <div class="skmw-when-right">
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
+            <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
+          </div>
+        </div>
         <div class="skmw-past-note" id="skmw-s-past">⚠️ Can't schedule in the past — pick a future time.</div>
-        <div id="skmw-s-cal"></div>
         <label style="margin-top:14px;">Links <span style="text-transform:none;font-weight:400;color:#9ca3af;">(uncheck to exclude)</span></label>
         <div id="skmw-s-linklist"></div>
         <button type="button" class="skmw-addlink" id="skmw-s-addlink">＋ Add link</button>
-        <label class="skmw-row" style="margin-top:10px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-email" style="margin:0;"${composerEmailOn ? ' checked' : ''}> 📧 Send email to all members</label>
-        <label class="skmw-row" style="margin-top:12px;cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-ntf" style="margin:0;"> 🔔 Notify when it goes out</label>
     </div>
     <div class="skmw-actions">
       <button class="skmw-btn skmw-btn-ghost" id="skmw-s-cancel">Cancel</button>
@@ -1079,11 +1089,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
   if (isEdit) setTimeout(() => document.getElementById('skmw-s-content')?.focus(), 60);
 
 
-  const $dt = document.getElementById('skmw-s-dt');
   const $past = document.getElementById('skmw-s-past');
 
   function syncFromChosen() {
-    $dt.value = toDtLocal(chosen);
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
 
@@ -1101,10 +1109,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
   };
   openVideoLinks.forEach(addLinkRow);
   document.getElementById('skmw-s-addlink').addEventListener('click', () => addLinkRow(''));
-  $dt.addEventListener('change', () => {
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) { chosen = v; syncFromChosen(); sCal.refresh(); }
-  });
 
   const $ntf = document.getElementById('skmw-s-ntf');
   if ($ntf) {
@@ -1134,10 +1138,6 @@ async function openScheduleDialog(post = null, prefillText = null) {
 
   document.getElementById('skmw-s-save').addEventListener('click', async () => {
     console.log('[skmw] schedule save clicked', { isEdit, id: post?.id, chosen: chosen.toISOString() });
-    // Read the field directly — a change event may not have fired yet if the
-    // user edits the time and clicks Save immediately.
-    const v = new Date($dt.value);
-    if (!isNaN(v.getTime())) chosen = v;
     const finalContent = document.getElementById('skmw-s-content').value.trim();
     if (!finalContent) return showErr('Post content is empty.');
     const titleVal = document.getElementById('skmw-s-title').value.trim();
@@ -1870,7 +1870,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.10');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.11');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
