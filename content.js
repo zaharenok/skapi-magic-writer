@@ -526,7 +526,8 @@ function injectStyles() {
     .skmw-when-right{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;align-self:center;}
     .skmw-when-right .skmw-row{min-height:20px;}
     .skmw-cal-time{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #e5e7eb;}
-    .skmw-cal-time select{flex:1;min-width:0;padding:5px 6px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:${INK};cursor:pointer;}
+    .skmw-cal-timeinp{width:100%;box-sizing:border-box;padding:6px 8px;border:2px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:${INK};text-align:center;}
+    .skmw-cal-timeinp:focus{outline:none;border-color:${BRAND};}
     .skmw-pop.editing textarea{min-height:160px;}
     .skmw-tabs{display:flex;gap:4px;padding:8px 10px 10px;}
     .skmw-tab{flex:1;padding:7px;border:1.5px solid #e5e7eb;background:#fff;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;text-align:center;}
@@ -1459,25 +1460,24 @@ function mountCalendar(container, getChosen, setChosen) {
 function mountPopupCalendar(container, getChosen, setChosen) {
   const fmt = (d) => d.toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   container.classList.add('skmw-cal-wrap');
-  container.innerHTML = `<button type="button" class="skmw-cal-toggle">📅 ${escapeHtml(fmt(getChosen()))}</button><div class="skmw-cal skmw-cal-pop" style="display:none"><div class="skmw-cal-main"></div><div class="skmw-cal-time"><select class="skmw-cal-hsel" aria-label="Hour"></select><select class="skmw-cal-msel" aria-label="Minute"></select></div></div>`;
+  container.innerHTML = `<button type="button" class="skmw-cal-toggle">📅 ${escapeHtml(fmt(getChosen()))}</button><div class="skmw-cal skmw-cal-pop" style="display:none"><div class="skmw-cal-main"></div><div class="skmw-cal-time"><input type="time" class="skmw-cal-timeinp" aria-label="Time"></div></div>`;
   const btn = container.querySelector('.skmw-cal-toggle');
   const pop = container.querySelector('.skmw-cal-pop');
   btn.addEventListener('click', (e) => { e.stopPropagation(); pop.style.display = pop.style.display === 'none' ? 'block' : 'none'; });
   document.addEventListener('click', (e) => { if (!container.contains(e.target)) pop.style.display = 'none'; });
-  // Hour/minute scrollers (same pickers the datetime input used to give).
-  const hSel = pop.querySelector('.skmw-cal-hsel');
-  const mSel = pop.querySelector('.skmw-cal-msel');
-  for (let h = 0; h < 24; h++) hSel.add(new Option(String(h).padStart(2, '0'), String(h)));
-  for (let m = 0; m < 60; m++) mSel.add(new Option(String(m).padStart(2, '0'), String(m)));
-  const syncTime = () => { const c = getChosen(); hSel.value = String(c.getHours()); mSel.value = String(c.getMinutes()); };
+  // Native time picker — same scrollers the datetime input used to give.
+  const timeInp = pop.querySelector('.skmw-cal-timeinp');
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const syncTime = () => { const c = getChosen(); timeInp.value = `${pad2(c.getHours())}:${pad2(c.getMinutes())}`; };
   const onTime = () => {
+    const [h, m] = (timeInp.value || '').split(':').map((v) => parseInt(v, 10));
+    if (isNaN(h) || isNaN(m)) return;
     const c = new Date(getChosen());
-    c.setHours(parseInt(hSel.value, 10), parseInt(mSel.value, 10), 0, 0);
+    c.setHours(h, m, 0, 0);
     setChosen(c);
     syncTime();
   };
-  hSel.addEventListener('change', onTime);
-  mSel.addEventListener('change', onTime);
+  timeInp.addEventListener('change', onTime);
   const sync = () => { btn.textContent = `📅 ${fmt(getChosen())}`; syncTime(); };
   const cal = mountCalendar(pop.querySelector('.skmw-cal-main'), getChosen, (d) => { setChosen(d); sync(); });
   syncTime();
@@ -1902,7 +1902,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.20');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.21');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

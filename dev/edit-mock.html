@@ -395,7 +395,7 @@ function renderEditForm(post, container) {
       <div class="skmw-when-left">
         <label style="display:block;">Publish at</label>
         <button type="button" class="skmw-cal-toggle" id="skmw-e-toggle"></button>
-        <div class="skmw-cal-time"><select id="skmw-e-h"></select><select id="skmw-e-m"></select></div>
+        <div class="skmw-cal-time"><input type="time" id="skmw-e-time" aria-label="Time"></div>
       </div>
       <div class="skmw-when-right">
         <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-email" style="margin:0;"> 📧 Send email to all members</label>
@@ -425,7 +425,7 @@ function renderEditForm(post, container) {
 
   function syncFromChosen() {
     $tgl.textContent = '📅 ' + chosen.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    $h.value = String(chosen.getHours()); $m.value = String(chosen.getMinutes());
+    $t.value = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
   syncFromChosen();
@@ -497,7 +497,7 @@ function openScheduleMock() {
           <div class="skmw-when-left">
             <label style="display:block;">Publish at</label>
             <button type="button" class="skmw-cal-toggle" id="skmw-s-toggle"></button>
-            <div class="skmw-cal-time"><select id="skmw-s-h"></select><select id="skmw-s-m"></select></div>
+            <div class="skmw-cal-time"><input type="time" id="skmw-s-time" aria-label="Time"></div>
           </div>
           <div class="skmw-when-right">
             <label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-s-gif" style="margin:0;" checked> 🎬 GIF</label>
@@ -519,15 +519,15 @@ function openScheduleMock() {
   const close = () => overlay.remove();
   const $tgl = document.getElementById('skmw-s-toggle');
   const $past = document.getElementById('skmw-s-past');
-  const $h = document.getElementById('skmw-s-h');
-  const $m = document.getElementById('skmw-s-m');
-  for (let h = 0; h < 24; h++) $h.add(new Option(String(h).padStart(2, '0'), String(h)));
-  for (let m = 0; m < 60; m++) $m.add(new Option(String(m).padStart(2, '0'), String(m)));
-  $h.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
-  $m.addEventListener('change', () => { chosen = new Date(chosen); chosen.setHours(+$h.value, +$m.value, 0, 0); syncFromChosen(); });
+  const $t = document.getElementById('skmw-s-time');
+  $t.addEventListener('change', () => {
+    const [h, m] = ($t.value || ':').split(':').map((v) => parseInt(v, 10));
+    if (isNaN(h) || isNaN(m)) return;
+    chosen = new Date(chosen); chosen.setHours(h, m, 0, 0); syncFromChosen();
+  });
   function syncFromChosen() {
     $tgl.textContent = '📅 ' + chosen.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    $h.value = String(chosen.getHours()); $m.value = String(chosen.getMinutes());
+    $t.value = String(chosen.getHours()).padStart(2, '0') + ':' + String(chosen.getMinutes()).padStart(2, '0');
     $past.style.display = chosen.getTime() < Date.now() ? 'block' : 'none';
   }
   $dt.addEventListener('change', () => {
