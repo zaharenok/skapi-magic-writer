@@ -33,7 +33,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon128.png',
-        title: msg.title || 'Skool Magic Writer',
+        title: msg.title || chrome.i18n.getMessage('extName') || 'Skool Magic Writer',
         message: msg.message || '',
         priority: 1,
       });

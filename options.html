@@ -16,7 +16,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1><span class="logo">W</span> Skool Magic Writer</h1>
+    <h1><span class="logo">W</span> <span id="appName">Skool Magic Writer</span></h1>
     <p class="sub">Experimental writer + scheduler. Buttons appear inside Skool next to the composer.</p>
 
     <div class="note">
@@ -30,5 +30,10 @@
       Skapi dashboard — no per-user settings required.
     </div>
   </div>
+  <script>
+    // Localized extension name (brand + CTA) for the page title and heading
+    const n = chrome.i18n.getMessage('extName');
+    if (n) { document.title = n; document.getElementById('appName').textContent = n; }
+  </script>
 </body>
 </html>

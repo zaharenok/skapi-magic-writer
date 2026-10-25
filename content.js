@@ -744,6 +744,10 @@ async function openMagicDialog() {
       const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
       badge.innerHTML = `🔒 Trial over — subscribe to keep creating · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Join the community</a>`;
       badge.style.display = 'block';
+    } else if (acc.state === 'watermark') {
+      const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
+      badge.innerHTML = `💧 Watermark mode ${acc.posts_used ?? '?'}/${acc.posts_limit ?? 10} — posts will include a promo note · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Join to remove</a>`;
+      badge.style.display = 'block';
     } else if (acc.state === 'subscribed') {
       badge.innerHTML = '⭐ Full access';
       badge.style.display = 'block';
@@ -1912,7 +1916,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.30');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.32');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
