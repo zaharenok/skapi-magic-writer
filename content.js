@@ -477,6 +477,10 @@ function injectStyles() {
     .skmw-btn-pink{background:${BRAND};color:${INK};}
     .skmw-btn-pink:disabled{opacity:.5;cursor:wait;}
     .skmw-err{background:#FEF2F2;border:2px solid #FCA5A5;color:#991B1B;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px;display:none;}
+    .skmw-err.skmw-paywall{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:linear-gradient(135deg,#FF90E8,#7848D8);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;padding:14px 16px;box-shadow:0 6px 0 rgba(0,0,0,.15);}
+    .skmw-err.skmw-paywall a{color:#fff;text-decoration:underline;font-weight:800;}
+    .skmw-accdoc{background:#FEF3C7;border:1.5px solid #F59E0B;color:#92400E;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;margin:8px 0 0;}
+    .skmw-accdoc a{color:#B45309;text-decoration:underline;font-weight:700;}
     .skmw-trial{font-size:13px;font-weight:600;color:#374151;background:#F9FAFB;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;margin:0 0 12px;}
     .skmw-loading{margin-top:16px;text-align:center;}
     .skmw-progress{width:100%;height:8px;background:#e5e7eb;border-radius:10px;overflow:hidden;margin-bottom:10px;}
@@ -1044,6 +1048,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
     <h2>${isEdit ? '✏️ Edit scheduled post' : '📅 Schedule post'}</h2>
     <p class="sub">${isEdit ? 'Update the post or its publish time.' : 'Publishes automatically at the chosen time — as you, in this community.'}</p>
     ${!isEdit ? (gifSavedNote ? '<div class="skmw-chip skmw-chip-ok">🎬 GIF will be saved with this post</div>' : (hasComposerMedia ? '<div class="skmw-chip skmw-chip-warn">⚠️ Only 🎬-picked GIFs carry over — uploaded files won\'t</div>' : '')) : editGifNote}
+    <div id="skmw-s-accdoc"></div>
     <div class="skmw-sched-cols">
       <div class="skmw-sched-left">
         <div class="skmw-s-toprow">
@@ -1143,6 +1148,9 @@ async function openScheduleDialog(post = null, prefillText = null) {
     if (linkList.children.length >= 3) { toast('⚠️ Max 3 links per post'); return; }
     addLinkRow('');
   });
+
+  // Membership warning: join invite for blocked/watermark users (members see nothing).
+  checkProAccess().then((acc) => renderAccessNote(document.getElementById('skmw-s-accdoc'), acc));
 
   const $ntf = document.getElementById('skmw-s-ntf');
   if ($ntf) {
@@ -1312,6 +1320,17 @@ function joinUrl(prefer) {
   // Ссылка «вступить в сообщество» — всегда ведёт на /about (там оплата).
   const u = prefer || window.__skmwSubUrl || 'https://www.skool.com/skoolmagicwriter/about';
   return /\/about\/?$/i.test(u) ? u : u.replace(/\/+$/, '') + '/about';
+}
+
+// Warning note in schedule/edit dialogs: only for users who actually need
+// it (out of free posts / watermark zone). Members and clean trial — silent.
+function renderAccessNote(host, acc) {
+  if (!host || !acc || acc.state === 'subscribed' || acc.state === 'trial' || acc.state === 'gate_disabled') return;
+  const url = joinUrl(acc.subscribe_url);
+  const msg = acc.state === 'watermark'
+    ? `💧 Your free posts are used up — every post now includes a promo note. <a href="${url}" target="_blank" rel="noopener">Join the community</a> to remove it.`
+    : `⚠️ You're out of free posts — this post won't publish until you join the paid community. <a href="${url}" target="_blank" rel="noopener">Join →</a>`;
+  host.innerHTML = `<div class="skmw-accdoc">${msg}</div>`;
 }
 
 function gifTermFrom(text) {
@@ -1821,6 +1840,7 @@ function renderEditForm(post, container) {
     <label style="margin-top:14px;">Post content</label>
     <textarea id="skmw-e-content" placeholder="Write your post...">${escapeHtml(bodyContent)}</textarea>
     ${(() => { const hasGif = !!(post.media_url || gifOn); return hasGif ? `<label class="skmw-row" style="cursor:pointer;text-transform:none;font-weight:600;"><input type="checkbox" id="skmw-e-gif" style="margin:0;" checked> 🎬 GIF ✓</label>` : ''; })()}
+    <div id="skmw-e-accdoc"></div>
     <label style="margin-top:14px;">Publish at</label>
     <div id="skmw-e-cal"></div>
     <div class="skmw-past-note" id="skmw-e-past">⚠️ Can't schedule in the past — pick a future time.</div>
@@ -1856,6 +1876,9 @@ function renderEditForm(post, container) {
     if (linkList.children.length >= 3) { toast('⚠️ Max 3 links per post'); return; }
     addLinkRow('');
   });
+
+  // Membership warning (same rules as the schedule dialog).
+  checkProAccess().then((acc) => renderAccessNote(document.getElementById('skmw-e-accdoc'), acc));
 
   document.getElementById('skmw-e-cancel').addEventListener('click', () => renderList());
   document.getElementById('skmw-edit-back').addEventListener('click', () => {
@@ -1930,7 +1953,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.33');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.34');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
