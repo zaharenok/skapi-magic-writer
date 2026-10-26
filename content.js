@@ -741,11 +741,11 @@ async function openMagicDialog() {
       badge.innerHTML = `🆓 Trial: ${acc.posts_used ?? 0}/${acc.posts_limit ?? 5} posts`;
       badge.style.display = 'block';
     } else if (acc.state === 'trial_expired') {
-      const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
+      const url = joinUrl(acc.subscribe_url);
       badge.innerHTML = `🔒 Trial over — subscribe to keep creating · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Join the community</a>`;
       badge.style.display = 'block';
     } else if (acc.state === 'watermark') {
-      const url = acc.subscribe_url || window.__skmwSubUrl || 'https://www.skool.com';
+      const url = joinUrl(acc.subscribe_url);
       badge.innerHTML = `💧 Watermark mode ${acc.posts_used ?? '?'}/${acc.posts_limit ?? 10} — posts will include a promo note · <a href="${url}" target="_blank" rel="noopener" style="color:#DB2777;text-decoration:underline;font-weight:600">Join to remove</a>`;
       badge.style.display = 'block';
     } else if (acc.state === 'subscribed') {
@@ -809,15 +809,22 @@ async function openMagicDialog() {
   function showErr(m) {
     const e = document.getElementById('skmw-err');
     if (String(m).includes('subscription_required')) {
-      const url = window.__skmwSubUrl || 'https://www.skool.com';
-      e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+      const url = joinUrl();
+      const ru = uiLang() === 'ru';
+      e.className = 'skmw-err skmw-paywall';
+      e.innerHTML = (ru ? '🔒 Нужна подписка, чтобы продолжить. ' : '🔒 Subscription required to continue. ')
+        + '<a href="' + url + '" target="_blank" rel="noopener">Join the community →</a>';
     } else if (String(m).includes('pro_feature_required')) {
-      const url = window.__skmwSubUrl || 'https://www.skool.com';
-      e.innerHTML = '🔒 Это Pro-фича: контекст из постов сообщества доступен только участникам. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+      const url = joinUrl();
+      const ru = uiLang() === 'ru';
+      e.className = 'skmw-err skmw-paywall';
+      e.innerHTML = (ru ? '🔒 Это Pro-фича: контекст из постов сообщества доступен только участникам. ' : '🔒 Pro feature: recent-community context is members-only. ')
+        + '<a href="' + url + '" target="_blank" rel="noopener">Join the community →</a>';
     } else {
+      e.className = 'skmw-err';
       e.textContent = m;
     }
-    e.style.display = 'block';
+    e.style.display = 'flex';
   }
   function hideErr() { document.getElementById('skmw-err').style.display = 'none'; }
 }
@@ -1244,10 +1251,15 @@ async function openScheduleDialog(post = null, prefillText = null) {
   function showErr(m) {
     const e = document.getElementById('skmw-s-err');
     if (String(m).includes('subscription_required')) {
-      const url = window.__skmwSubUrl || 'https://www.skool.com';
-      e.innerHTML = '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>';
+      const url = joinUrl();
+      const ru = uiLang() === 'ru';
+      e.innerHTML = ru
+        ? '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>'
+        : '🔒 Subscription required. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Join the community →</a>';
     } else if (String(m).includes('scheduled_limit')) {
-      e.textContent = '🗓 Лимит: максимум 7 отложенных постов одновременно. Дождись публикации или удали лишние в списке 📅.';
+      e.textContent = uiLang() === 'ru'
+        ? '🗓 Лимит: максимум 7 отложенных постов одновременно. Дождись публикации или удали лишние в списке 📅.'
+        : '🗓 Limit: max 7 scheduled posts at once. Wait for them to publish or delete extras in the 📅 list.';
     } else {
       e.textContent = m;
     }
@@ -1300,6 +1312,17 @@ function notifyPublished(post) {
   try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: chrome.i18n.getMessage('extName') || 'Skool Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
   ding();
 }
+function joinUrl(prefer) {
+  // Ссылка «вступить в сообщество» — всегда ведёт на /about (там оплата).
+  const u = prefer || window.__skmwSubUrl || 'https://www.skool.com/skoolmagicwriter/about';
+  return /\/about\/?$/i.test(u) ? u : u.replace(/\/+$/, '') + '/about';
+}
+
+function uiLang() {
+  // Язык плашек расширения = язык интерфейса браузера (ru → русский, иначе английский).
+  return ((navigator.language || 'en').split('-')[0] === 'ru') ? 'ru' : 'en';
+}
+
 function gifTermFrom(text) {
   const stop = new Set(['this', 'that', 'with', 'from', 'have', 'been', 'what', 'when', 'post', 'about', 'more', 'some', 'into', 'just', 'also', 'like', 'than', 'then', 'them', 'they', 'will', 'your', 'very', 'the', 'and', 'for', 'are', 'you', 'how', 'why']);
   const words = (text || '').toLowerCase().match(/[a-z]{4,}/g) || [];
@@ -1916,7 +1939,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.32');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.33');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
