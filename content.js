@@ -810,15 +810,13 @@ async function openMagicDialog() {
     const e = document.getElementById('skmw-err');
     if (String(m).includes('subscription_required')) {
       const url = joinUrl();
-      const ru = uiLang() === 'ru';
       e.className = 'skmw-err skmw-paywall';
-      e.innerHTML = (ru ? '🔒 Нужна подписка, чтобы продолжить. ' : '🔒 Subscription required to continue. ')
+      e.innerHTML = '🔒 Subscription required to continue. '
         + '<a href="' + url + '" target="_blank" rel="noopener">Join the community →</a>';
     } else if (String(m).includes('pro_feature_required')) {
       const url = joinUrl();
-      const ru = uiLang() === 'ru';
       e.className = 'skmw-err skmw-paywall';
-      e.innerHTML = (ru ? '🔒 Это Pro-фича: контекст из постов сообщества доступен только участникам. ' : '🔒 Pro feature: recent-community context is members-only. ')
+      e.innerHTML = '🔒 Pro feature: recent-community context is members-only. '
         + '<a href="' + url + '" target="_blank" rel="noopener">Join the community →</a>';
     } else {
       e.className = 'skmw-err';
@@ -1252,14 +1250,12 @@ async function openScheduleDialog(post = null, prefillText = null) {
     const e = document.getElementById('skmw-s-err');
     if (String(m).includes('subscription_required')) {
       const url = joinUrl();
-      const ru = uiLang() === 'ru';
-      e.innerHTML = ru
-        ? '🔒 Нужна подписка. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Вступить в сообщество →</a>'
-        : '🔒 Subscription required. <a href="' + url + '" target="_blank" rel="noopener" style="color:#FF90E8;text-decoration:underline;font-weight:600">Join the community →</a>';
+      e.className = 'skmw-err skmw-paywall';
+      e.innerHTML = '🔒 Subscription required to continue. '
+        + '<a href="' + url + '" target="_blank" rel="noopener">Join the community →</a>';
     } else if (String(m).includes('scheduled_limit')) {
-      e.textContent = uiLang() === 'ru'
-        ? '🗓 Лимит: максимум 7 отложенных постов одновременно. Дождись публикации или удали лишние в списке 📅.'
-        : '🗓 Limit: max 7 scheduled posts at once. Wait for them to publish or delete extras in the 📅 list.';
+      e.className = 'skmw-err';
+      e.textContent = '🗓 Limit: max 7 scheduled posts at once. Wait for them to publish or delete extras in the 📅 list.';
     } else {
       e.textContent = m;
     }
@@ -1316,11 +1312,6 @@ function joinUrl(prefer) {
   // Ссылка «вступить в сообщество» — всегда ведёт на /about (там оплата).
   const u = prefer || window.__skmwSubUrl || 'https://www.skool.com/skoolmagicwriter/about';
   return /\/about\/?$/i.test(u) ? u : u.replace(/\/+$/, '') + '/about';
-}
-
-function uiLang() {
-  // Язык плашек расширения = язык интерфейса браузера (ru → русский, иначе английский).
-  return ((navigator.language || 'en').split('-')[0] === 'ru') ? 'ru' : 'en';
 }
 
 function gifTermFrom(text) {
