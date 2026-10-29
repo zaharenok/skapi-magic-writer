@@ -1,5 +1,5 @@
 /**
- * Skool Magic Writer — content script (experimental, v0.1)
+ * Skool Magic Writer — content script (v1.1.36)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -165,7 +165,7 @@ let lastGifTerm = null; // search term of the GIF the extension itself inserted 
 function handleContextLost() {
   if (_contextLost) return true;
   _contextLost = true;
-  console.error('[skmw] Extension context invalidated — reloading tab');
+  console.warn('[skmw] Extension context invalidated — reloading tab');
   toast('⚠️ Extension was updated — reopening this tab…');
   // Self-heal: reload exactly once per tab lifetime. sessionStorage survives
   // the reload but dies with the tab, so a reload loop is impossible; a
@@ -803,6 +803,9 @@ async function openMagicDialog() {
       await insertIntoComposer(data.text, attachGif);
       toast(attachGif ? '✅ Post generated and inserted (+ GIF)' : '✅ Post generated and inserted');
     } catch (e) {
+      // Context died mid-run (extension reloaded/updated): the tab reloads
+      // itself via handleContextLost — a raw error here would just flash.
+      if (/context invalidated/i.test(e.message || '')) return;
       showErr(e.message);
       goBtn.disabled = false;
       loading.style.display = 'none';
@@ -1953,7 +1956,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.34');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.36');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
