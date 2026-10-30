@@ -1,5 +1,5 @@
 /**
- * Skool Magic Writer — content script (v1.1.36)
+ * Skool Magic Writer — content script (v1.1.37)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -238,6 +238,22 @@ async function apiRequest(path, { method = 'GET', body, auth = true } = {}) {
     throw new Error(data.detail || data.error || `API ${res.status}`);
   }
   return data;
+}
+
+// Activation event: fire-and-forget, one-time per (user, event). The flag
+// flips ONLY after a successful send, so an offline/no-session attempt
+// retries on the next page load; the server dedupes anyway.
+async function reportEvent(event) {
+  try {
+    const flag = 'skmw_ev_' + event;
+    const got = await new Promise((res) => chrome.storage.local.get([flag], res));
+    if (got && got[flag]) return;
+    await apiRequest('/ext/event', {
+      method: 'POST',
+      body: { event, ext_version: chrome.runtime.getManifest().version },
+    });
+    chrome.storage.local.set({ [flag]: 1 });
+  } catch (e) { /* no session / offline / server down — retry next load */ }
 }
 
 // ---------------------------------------------------------------------------
@@ -683,6 +699,7 @@ let dialogOpen = false;
 async function openMagicDialog() {
   if (dialogOpen) return;
   dialogOpen = true;
+  reportEvent('magic_open');
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal">
@@ -1949,6 +1966,7 @@ function observe() {
   obs.observe(document.body, { childList: true, subtree: true });
 }
 async function init() {
+  reportEvent('skool_open');
   injectStyles();
   observe();
   startDiscardWatcher();
@@ -1956,7 +1974,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.36');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.37');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

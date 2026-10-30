@@ -1,11 +1,11 @@
-# Chrome Web Store — submission kit (Skool Magic Writer v1.1.36)
+# Chrome Web Store — submission kit (Skool Magic Writer v1.1.37)
 
-Zip для загрузки: `skool-magic-writer-1.1.36.zip` (в корне сабмодуля).
+Zip для загрузки: `skool-magic-writer-1.1.37.zip` (в корне сабмодуля).
 Консоль: https://chrome.google.com/webstore/devconsole (нужен аккаунт разработчика, разовый взнос $5).
 
 ## Что заполнять в консоли
 
-- **Upload zip** → `skool-magic-writer-1.1.36.zip`
+- **Upload zip** → `skool-magic-writer-1.1.37.zip`
 - **Store listing → Locale**: добавить языки ниже (Add locale), в каждый вставить Name / Short description / Detailed description из своего раздела.
 - **Category**: Productivity.
 - **Screenshots**: 1–5 штук 1280×800. Советую снять: диалог ✨ Magic Post, окно 📅 Schedule post с пресетами, попап со списком отложенных постов.
@@ -42,7 +42,7 @@ Skool Magic Writer puts two small buttons next to the composer you already use o
 
 The extension works with the Skool session you are already logged into. No passwords, no second account. There is a free trial, after that a subscription.
 
-On privacy: the extension reads your Skool session cookie so it can publish as you, saves your settings in your browser, and only ever talks to our own server at api.skapi.pro. No ads, no analytics, no data selling.
+On privacy: the extension reads your Skool session cookie so it can publish as you, saves your settings in your browser, and only ever talks to our own server at api.skapi.pro. No ads, no third-party trackers, no data selling — we only count which features you use, on our own server.
 
 ### ru — Русский
 **Name:** Skool Magic Writer — ИИ-посты и расписание
@@ -58,7 +58,7 @@ Skool Magic Writer ставит две кнопки рядом с полем, г
 
 Расширение работает через вашу сессию Skool. Без паролей и вторых аккаунтов. Есть бесплатный пробный период, дальше подписка.
 
-Про приватность: расширение читает cookie сессии Skool, чтобы публиковать посты от вашего имени, хранит настройки в браузере и общается только с нашим сервером api.skapi.pro. Никакой рекламы и аналитики, данные не продаём.
+Про приватность: расширение читает cookie сессии Skool, чтобы публиковать посты от вашего имени, хранит настройки в браузере и общается только с нашим сервером api.skapi.pro. Никакой рекламы и сторонних трекеров, данные не продаём — мы лишь считаем на собственном сервере, какие функции используются.
 
 ### uk — Українська
 **Name:** Skool Magic Writer — ШІ-пости й розклад
@@ -74,7 +74,7 @@ Skool Magic Writer додає дві кнопки поруч із полем, д
 
 Розширення працює через вашу сесію Skool. Без паролів і других акаунтів. Є безкоштовний пробний період, далі підписка.
 
-Про приватність: розширення читає cookie сесії Skool, щоб публікувати пости від вашого імені, зберігає налаштування в браузері і спілкується лише з нашим сервером api.skapi.pro. Реклами й аналітики немає, дані не продаємо.
+Про приватність: розширення читає cookie сесії Skool, щоб публікувати пости від вашого імені, зберігає налаштування в браузері і спілкується лише з нашим сервером api.skapi.pro. Реклами й сторонніх трекерів немає, дані не продаємо — ми лише рахуємо на власному сервері, які функції використовуються.
 
 ### de — Deutsch
 **Name:** Skool Magic Writer — KI-Posts & Planung
@@ -90,7 +90,7 @@ Skool Magic Writer setzt zwei kleine Buttons neben das Eingabefeld, das du auf s
 
 Die Erweiterung nutzt die Skool-Sitzung, in der du schon eingeloggt bist. Keine Passwörter, kein zweites Konto. Es gibt eine kostenlose Testphase, danach ein Abo.
 
-Zum Datenschutz: Die Erweiterung liest deinen Skool-Session-Cookie, um in deinem Namen zu veröffentlichen, speichert Einstellungen im Browser und spricht nur mit unserem eigenen Server api.skapi.pro. Keine Werbung, keine Tracker, kein Datenverkauf.
+Zum Datenschutz: Die Erweiterung liest deinen Skool-Session-Cookie, um in deinem Namen zu veröffentlichen, speichert Einstellungen im Browser und spricht nur mit unserem eigenen Server api.skapi.pro. Keine Werbung, keine Tracker von Dritten, kein Datenverkauf — wir zählen nur auf unserem eigenen Server, welche Funktionen genutzt werden.
 
 ### es — Español
 **Name:** Skool Magic Writer — Posts con IA y horario
@@ -106,7 +106,7 @@ Skool Magic Writer coloca dos botones pequeños junto al cuadro donde ya escribe
 
 La extensión funciona con la sesión de Skool en la que ya estás. Sin contraseñas ni cuentas nuevas. Hay prueba gratis y luego una suscripción.
 
-Sobre la privacidad: la extensión lee tu cookie de sesión de Skool para publicar en tu nombre, guarda los ajustes en tu navegador y solo habla con nuestro servidor api.skapi.pro. Sin anuncios, sin analítica, no vendemos datos.
+Sobre la privacidad: la extensión lee tu cookie de sesión de Skool para publicar en tu nombre, guarda los ajustes en tu navegador y solo habla con nuestro servidor api.skapi.pro. Sin anuncios, sin rastreadores de terceros, no vendemos datos — solo contamos en nuestro propio servidor qué funciones se usan.
 
 ### fr — Français
 **Name:** Skool Magic Writer — Posts IA & programmation
@@ -122,7 +122,7 @@ Skool Magic Writer ajoute deux petits boutons à côté de la zone où vous écr
 
 L'extension fonctionne avec votre session Skool existante. Pas de mot de passe, pas de deuxième compte. Essai gratuit puis abonnement.
 
-Côté vie privée : l'extension lit votre cookie de session Skool pour publier en votre nom, garde vos réglages dans le navigateur et ne parle qu'à notre serveur api.skapi.pro. Pas de pub, pas de trackers, pas de revente de données.
+Côté vie privée : l'extension lit votre cookie de session Skool pour publier en votre nom, garde vos réglages dans le navigateur et ne parle qu'à notre serveur api.skapi.pro. Pas de pub, pas de traceurs tiers, pas de revente de données — nous comptons seulement sur notre serveur quelles fonctions sont utilisées.
 
 ### it — Italiano
 **Name:** Skool Magic Writer — Post con IA e programma
@@ -138,7 +138,7 @@ Skool Magic Writer aggiunge due piccoli pulsanti accanto alla casella dove già 
 
 L'estensione usa la sessione Skool a cui sei già collegato. Niente password, niente secondo account. C'è una prova gratuita, poi un abbonamento.
 
-Sulla privacy: l'estensione legge il cookie di sessione Skool per pubblicare per conto tuo, salva le impostazioni nel browser e parla solo con il nostro server api.skapi.pro. Niente pubblicità, niente tracker, nessuna vendita di dati.
+Sulla privacy: l'estensione legge il cookie di sessione Skool per pubblicare per conto tuo, salva le impostazioni nel browser e parla solo con il nostro server api.skapi.pro. Niente pubblicità, niente tracker di terze parti, nessuna vendita di dati — contiamo solo sul nostro server quali funzioni vengono usate.
 
 ### pt_BR — Português (Brasil)
 **Name:** Skool Magic Writer — Posts com IA e agenda
@@ -154,7 +154,7 @@ O Skool Magic Writer coloca dois botões pequenos ao lado da caixa onde você j�
 
 A extensão funciona com a sessão do Skool em que você já está. Sem senhas, sem conta nova. Tem teste grátis e depois assinatura.
 
-Sobre privacidade: a extensão lê o cookie de sessão do Skool para publicar em seu nome, guarda as configurações no navegador e conversa apenas com o nosso servidor api.skapi.pro. Sem anúncios, sem rastreadores, não vendemos dados.
+Sobre privacidade: a extensão lê o cookie de sessão do Skool para publicar em seu nome, guarda as configurações no navegador e conversa apenas com o nosso servidor api.skapi.pro. Sem anúncios, sem rastreadores de terceiros, não vendemos dados — apenas contamos no nosso próprio servidor quais funções são usadas.
 
 ### pl — Polski
 **Name:** Skool Magic Writer — Posty AI i harmonogram
@@ -170,7 +170,7 @@ Skool Magic Writer dodaje dwa małe przyciski obok pola, w którym już piszesz 
 
 Rozszerzenie działa na twojej bieżącej sesji Skool. Bez haseł i drugiego konta. Jest darmowy okres próbny, potem subskrypcja.
 
-Prywatność: rozszerzenie czyta ciasteczko sesji Skool, żeby publikować w twoim imieniu, zapisuje ustawienia w przeglądarce i rozmawia wyłącznie z naszym serwerem api.skapi.pro. Bez reklam, bez trackerów, nie sprzedajemy danych.
+Prywatność: rozszerzenie czyta ciasteczko sesji Skool, żeby publikować w twoim imieniu, zapisuje ustawienia w przeglądarce i rozmawia wyłącznie z naszym serwerem api.skapi.pro. Bez reklam, bez trackerów stron trzecich, bez sprzedaży danych — liczymy tylko na własnym serwerze, które funkcje są używane.
 
 ### tr — Türkçe
 **Name:** Skool Magic Writer — Yapay zekâ ile gönderi
@@ -186,7 +186,7 @@ Skool Magic Writer, skool.com'da zaten yazı yazdığınız kutunun yanına iki 
 
 Uzantı, içinde zaten oturum açık olan Skool hesabınızla çalışır. Şifre yok, ikinci hesap yok. Ücretsiz deneme var, sonrasında abonelik.
 
-Gizlilik hakkında: uzantı sizin adınıza yayınlayabilmek için Skool oturum çerezinizi okur, ayarları tarayıcınızda saklar ve yalnızca kendi sunucumuz api.skapi.pro ile konuşur. Reklam yok, izleyici yok, veri satışı yok.
+Gizlilik hakkında: uzantı sizin adınıza yayınlayabilmek için Skool oturum çerezinizi okur, ayarları tarayıcınızda saklar ve yalnızca kendi sunucumuz api.skapi.pro ile konuşur. Reklam yok, üçüncü taraf izleyici yok, veri satışı yok — hangi işlevlerin kullanıldığını yalnızca kendi sunucumuzda sayıyoruz.
 
 ### nl — Nederlands
 **Name:** Skool Magic Writer — AI-posts & planning
@@ -202,10 +202,10 @@ Skool Magic Writer zet twee kleine knoppen naast het veld waar je op skool.com t
 
 De extensie werkt met de Skool-sessie waarin je al ingelogd bent. Geen wachtwoorden, geen tweede account. Er is een gratis proefperiode, daarna een abonnement.
 
-Over privacy: de extensie leest je Skool-sessiecookie om in jouw naam te publiceren, bewaart instellingen in je browser en spreekt alleen met onze eigen server api.skapi.pro. Geen advertenties, geen trackers, geen gegevensverkoop.
+Over privacy: de extensie leest je Skool-sessiecookie om in jouw naam te publiceren, bewaart instellingen in je browser en spreekt alleen met onze eigen server api.skapi.pro. Geen advertenties, geen trackers van derden, geen gegevensverkoop — we tellen alleen op onze eigen server welke functies worden gebruikt.
 
 ---
 
 ## Privacy policy (заготовка для страницы на skapi.pro)
 
-Skool Magic Writer stores your settings locally in your browser. To publish scheduled posts on your behalf, it reads your Skool auth_token session cookie and sends it only to our own API at api.skapi.pro over HTTPS. We do not sell your data, do not use it for advertising and do not share it with third parties. Scheduled post content is stored on our servers only so it can be published at the time you chose, and you can delete it at any time from the extension. Questions: [твой email].
+Skool Magic Writer stores your settings locally in your browser. To publish scheduled posts on your behalf, it reads your Skool auth_token session cookie and sends it only to our own API at api.skapi.pro over HTTPS. We do not sell your data, do not use it for advertising and do not share it with third parties. We also log two basic feature-usage events (first time the extension runs on skool.com, first time the Magic Post dialog is opened) together with the extension version, on this same server, solely to understand which features are used; this data is never shared with third parties. Scheduled post content is stored on our servers only so it can be published at the time you chose, and you can delete it at any time from the extension. Questions: [твой email].
