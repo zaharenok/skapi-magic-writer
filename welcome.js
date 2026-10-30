@@ -21,6 +21,10 @@ function checkSession() {
     }
   });
 }
+const joinBtn = document.getElementById('joinCommunity');
+if (joinBtn) {
+  joinBtn.addEventListener('click', () => chrome.tabs.create({ url: 'https://www.skool.com/skoolmagicwriter/about' }));
+}
 
 openBtn.addEventListener('click', () => chrome.tabs.create({ url: SKOOL_URL }));
 

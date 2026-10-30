@@ -8,3 +8,7 @@ if (name) {
 document.getElementById('openWelcome').addEventListener('click', () => {
   chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
 });
+
+document.getElementById('joinCommunity').addEventListener('click', () => {
+  chrome.tabs.create({ url: 'https://www.skool.com/skoolmagicwriter/about' });
+});
