@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome to Skool Magic Writer</title>
+  <style>
+    :root { --purple: #6030C0; --purple2: #7848D8; --ink: #0A0A0A; --bg: #FAFAFA; --muted: #6b7280; }
+    * { box-sizing: border-box; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); margin: 0; padding: 48px 20px; }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    h1 { font-size: 24px; margin: 0 0 4px; display:flex; align-items:center; gap:10px; }
+    h1 .logo { width:36px; height:36px; border-radius:9px; background: linear-gradient(135deg, var(--purple), var(--purple2)); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:22px; transform: skewX(-8deg); }
+    p.sub { color: var(--muted); margin: 0 0 8px; font-size: 14.5px; }
+    .card { background:#fff; border:1.5px solid #E5E7EB; border-radius:12px; padding:18px 20px; margin:16px 0; }
+    .card h2 { font-size:15px; margin:0 0 10px; }
+    ol.steps { margin:0; padding-left:22px; }
+    ol.steps li { margin:8px 0; font-size:14.5px; line-height:1.5; }
+    .btn { background:linear-gradient(135deg,var(--purple),var(--purple2)); color:#fff; font-weight:700; font-size:14.5px; border:none; border-radius:8px; padding:9px 16px; cursor:pointer; vertical-align:middle; }
+    .btn:hover { filter:brightness(1.08); }
+    .status { margin-top:12px; font-size:13.5px; border-radius:8px; padding:10px 12px; background:#FEF3C7; border:1.5px solid #FDE68A; color:#92400E; }
+    .status.ok { background:#DCFCE7; border-color:#BBF7D0; color:#166534; }
+    .hint { color:var(--muted); font-size:12.5px; margin:10px 0 0; line-height:1.45; }
+    p.note { background:#EEF2FF; border:1.5px solid #C7D2FE; color:#3730A3; border-radius:10px; padding:10px 12px; font-size:13px; margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1><span class="logo">W</span> <span id="appName">Skool Magic Writer</span></h1>
+    <p class="sub">Installed! One tiny step left: connect your Skool session — about 30 seconds.</p>
+
+    <div class="card">
+      <h2>🚀 Get started</h2>
+      <ol class="steps">
+        <li><button class="btn" id="openSkool">Open skool.com</button></li>
+        <li>Log in to Skool with your usual account.</li>
+        <li>Open any of your communities — the ✨ Magic Post and 📅 Schedule buttons appear right next to the post composer.</li>
+      </ol>
+      <div class="status" id="sessionStatus">⏳ Checking for your Skool session…</div>
+      <p class="hint">The extension needs your Skool session cookie to write posts as you. It appears automatically
+      as soon as you are logged in on skool.com — nothing to type or paste here, and the token is never shown to anyone.
+      This page updates itself, so just leave it open while you log in.</p>
+    </div>
+
+    <div class="note">
+      📌 Scheduled posts are always published to the community set in the Skapi dashboard — no settings required.
+    </div>
+
+    <p class="hint">You can reopen this guide anytime: extension → Settings → “Open setup guide”.</p>
+  </div>
+  <script src="welcome.js"></script>
+</body>
+</html>

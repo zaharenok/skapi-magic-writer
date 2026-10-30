@@ -1,5 +1,5 @@
 /**
- * Skool Magic Writer — content script (v1.1.37)
+ * Skool Magic Writer — content script (v1.1.38)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -1974,7 +1974,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.37');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.38');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

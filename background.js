@@ -70,6 +70,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
-    chrome.runtime.openOptionsPage();
+    // Dedicated post-install page: checklist to open skool.com so the
+    // extension picks up the auth_token session cookie (see welcome.js).
+    chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
   }
 });

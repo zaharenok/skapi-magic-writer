@@ -12,12 +12,16 @@
     h1 .logo { width:32px; height:32px; border-radius:8px; background: linear-gradient(135deg, var(--purple), var(--purple2)); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:900; font-size:20px; transform: skewX(-8deg); }
     p.sub { color: var(--muted); margin: 0 0 8px; font-size: 14px; }
     p.note { background:#EEF2FF; border:1.5px solid #C7D2FE; color:#3730A3; border-radius:10px; padding:10px 12px; font-size:13px; margin: 16px 0; }
+    .btn { background:linear-gradient(135deg,var(--purple),var(--purple2)); color:#fff; font-weight:700; font-size:14px; border:none; border-radius:8px; padding:9px 14px; cursor:pointer; }
+    .btn:hover { filter:brightness(1.08); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1><span class="logo">W</span> <span id="appName">Skool Magic Writer</span></h1>
     <p class="sub">AI writer + scheduler. Buttons appear inside Skool next to the composer.</p>
+
+    <p><button class="btn" id="openWelcome">🚀 Open setup guide (connect your Skool session)</button></p>
 
     <div class="note">
       🔐 No login needed here. Your Skool session token is read automatically from
@@ -30,10 +34,6 @@
       Skapi dashboard — no per-user settings required.
     </div>
   </div>
-  <script>
-    // Localized extension name (brand + CTA) for the page title and heading
-    const n = chrome.i18n.getMessage('extName');
-    if (n) { document.title = n; document.getElementById('appName').textContent = n; }
-  </script>
+  <script src="options.js"></script>
 </body>
 </html>

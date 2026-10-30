@@ -1,11 +1,11 @@
-# Chrome Web Store — submission kit (Skool Magic Writer v1.1.37)
+# Chrome Web Store — submission kit (Skool Magic Writer v1.1.38)
 
-Zip для загрузки: `skool-magic-writer-1.1.37.zip` (в корне сабмодуля).
+Zip для загрузки: `skool-magic-writer-1.1.38.zip` (в корне сабмодуля).
 Консоль: https://chrome.google.com/webstore/devconsole (нужен аккаунт разработчика, разовый взнос $5).
 
 ## Что заполнять в консоли
 
-- **Upload zip** → `skool-magic-writer-1.1.37.zip`
+- **Upload zip** → `skool-magic-writer-1.1.38.zip`
 - **Store listing → Locale**: добавить языки ниже (Add locale), в каждый вставить Name / Short description / Detailed description из своего раздела.
 - **Category**: Productivity.
 - **Screenshots**: 1–5 штук 1280×800. Советую снять: диалог ✨ Magic Post, окно 📅 Schedule post с пресетами, попап со списком отложенных постов.
