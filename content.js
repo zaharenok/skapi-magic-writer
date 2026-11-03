@@ -1,5 +1,5 @@
 /**
- * Skool Magic Writer — content script (v1.1.40)
+ * Skool Magic Writer — content script (v1.1.41)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -76,8 +76,21 @@ async function closeComposer() {
     const visibleButtons = [...document.querySelectorAll('button')].filter(
       (b) => b.offsetParent !== null
     );
-    const cancelBtn = visibleButtons.find((b) => b.textContent.trim().toLowerCase() === 'cancel')
-      || visibleButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
+    // Prefer the composer footer's Cancel: exact-text 'Cancel' on the same
+    // row, immediately left of 'Post' (ground truth from findComposerTopic;
+    // our injected 📅 Schedule button may sit between them). The first
+    // 'cancel' in DOM order can belong to OUR calendar dialog or another
+    // widget — never click that by accident. Never our own .skmw buttons.
+    const skoolButtons = visibleButtons.filter((b) => !String(b.className).includes('skmw'));
+    const postBtn = skoolButtons.find((b) => b.textContent.trim().toLowerCase() === 'post');
+    const rowMid = (b) => { const r = b.getBoundingClientRect(); return r.top + r.height / 2; };
+    const exactCancels = skoolButtons.filter((b) => b.textContent.trim().toLowerCase() === 'cancel');
+    const cancelBtn = (postBtn && exactCancels.find((b) => {
+      const r = b.getBoundingClientRect(), pr = postBtn.getBoundingClientRect();
+      return Math.abs(rowMid(b) - rowMid(postBtn)) < 24 && r.left < pr.left;
+    }))
+      || exactCancels[0]
+      || skoolButtons.find((b) => b.textContent.trim().toLowerCase().includes('cancel'));
     if (cancelBtn) {
       cancelBtn.click();
     } else {
@@ -89,22 +102,14 @@ async function closeComposer() {
     }
     {
 
-      // Find Skool's confirmation modal. Ground truth (2026-10-24): Skool
-      // uses styled-components v6 hashed sc-* classes, so class-based
-      // matching is dead, and position/z-index heuristics false-positive on
-      // the fixed community sidebar. Anchor on the guard TEXT instead, then
-      // take the innermost container that also holds buttons.
-      // Shared guard matcher (skmwNorm handles typographic apostrophes);
-      // replaces the divergent closeComposer-only GUARD_RE (2026-10-25).
-      const GUARD_RE = SKMW_DISCARD_TEXT;
+      // Find Skool's confirmation modal via the shared guard discovery
+      // (selector pass + deep scan — one matcher for closeComposer, the
+      // watcher's check() and the pre-paint branch). Anchor stays the guard
+      // TEXT: styled-components v6 hashed sc-* classes made class matching
+      // dead, and position/z-index heuristics false-positive on the fixed
+      // community sidebar.
       const findModal = () => {
-        if (!GUARD_RE.test(skmwNorm(document.body.textContent))) return [];
-        const hits = [];
-        for (const el of document.querySelectorAll('div, section')) {
-          if (!GUARD_RE.test(skmwNorm(el.textContent))) continue;
-          if (!el.querySelector('button, [role="button"]')) continue;
-          hits.push(el);
-        }
+        const hits = skmwFindGuardModals();
         // Innermost first: the card holding the guard text and its buttons.
         hits.sort((a, b) => (a.querySelectorAll('*').length - b.querySelectorAll('*').length));
         return hits;
@@ -338,32 +343,71 @@ const SKMW_DISCARD_TEXT = new RegExp(
   + "|want to leave|without finishing|unsaved changes"
   + "|discard (?:your )?(?:post|draft)", "i"
 );
+// ONE guard-discovery for every close path: closeComposer's poll, the
+// watcher's check(), and the pre-paint branch. Three divergent copies caused
+// the 2026-10-25 regression (pre-paint had no deep scan, so an sc-* modal
+// without role/class stayed visible). Selector pass first; deep-scan
+// fallback ported verbatim from check().
+function skmwFindGuardModals() {
+  const hits = [
+    ...document.querySelectorAll(
+      '[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'
+    ),
+  ].filter((m) => SKMW_DISCARD_TEXT.test(skmwNorm(m.textContent)));
+  if (hits.length) return hits;
+  for (const div of document.querySelectorAll('div')) {
+    if (!div.querySelector('button, [role="button"]')) continue;
+    const st = window.getComputedStyle(div);
+    const r = div.getBoundingClientRect();
+    const coversVp = r.width >= window.innerWidth * 0.5 && r.height >= window.innerHeight * 0.5;
+    // Skool overlays: fixed with modest z-index, or absolute roots that
+    // cover most of the viewport (z-index gate >50 missed z=100..1100
+    // absolute containers — regression 2026-10-25).
+    if (!((st.position === 'fixed' && (parseInt(st.zIndex, 10) > 10 || coversVp))
+          || (st.position === 'absolute' && coversVp))) continue;
+    if (SKMW_DISCARD_TEXT.test(skmwNorm(div.textContent))) hits.push(div);
+  }
+  return hits;
+}
 // Fixed-position elements have offsetParent null — use rects for visibility.
 function skmwVisible(n) {
   const r = n.getBoundingClientRect ? n.getBoundingClientRect() : null;
   return !!r && r.width > 0 && r.height > 0;
 }
-// Find the dialog's accept (leave/discard) element. Scanned DEEPEST-first:
-// an ancestor holds BOTH buttons' texts ("Discard postKeep editing"), so an
-// outer-first scan would match the whole dialog container and click it.
-// New Skool DOM may keep action labels on non-button elements, so any
-// element qualifies — clicking the label bubbles to the real control.
-// 'cancel'-family is accepted only when an explicit deny ("Keep editing")
-// sits next to it: in a [Cancel][Leave] modal Cancel means STAY.
+// Find the dialog's accept (leave/discard) element — STRUCTURAL
+// classification. Controls only (button/[role=button]/a): the
+// bare "Cancel post" HEADER label is not clickable, so `|| hit` could click
+// nothing. The deny control ("Keep writing") is never a candidate. When an
+// explicit deny exists, the single remaining non-deny control IS the
+// confirm at ANY label ("Cancel post", "Close", "Discard", "Leave"…); no
+// deny: a one-button confirm dialog's sole control (Skool's okButtonText).
+// Worst case of a mis-pick is a non-destructive click: the dialog closes,
+// the composer stays open.
 function skmwFindAccept(scope) {
-  const nodes = [...scope.querySelectorAll('*')].filter(skmwVisible).reverse();
   const label = (n) => skmwNorm(n.textContent).trim();
-  const hasDeny = nodes.some((n) => { const t = label(n); return t && t.length <= 40 && SKMW_MODAL_DENY.test(t); });
-  for (const pattern of [SKMW_MODAL_ACCEPT, SKMW_MODAL_FALLBACK]) {
-    const hit = nodes.find((n) => {
-      const t = label(n);
-      if (!t || t.length > 40 || SKMW_MODAL_DENY.test(t)) return false;
-      if (pattern === SKMW_MODAL_FALLBACK && !hasDeny) return false;
-      return pattern.test(t);
-    });
-    if (hit) return hit.closest('button, [role="button"], a') || hit;
+  // Visible ≤40-char labels → their control, controls deduped.
+  const picks = [];
+  const seen = new Set();
+  for (const n of scope.querySelectorAll('*')) {
+    if (!skmwVisible(n)) continue;
+    const t = label(n);
+    if (!t || t.length > 40) continue;
+    const c = n.closest('button, [role="button"], a');
+    if (!c || !scope.contains(c) || seen.has(c)) continue;
+    seen.add(c);
+    picks.push({ c, t });
   }
-  return null;
+  if (!picks.length) return null;
+  const denyExists = picks.some(({ t }) => SKMW_MODAL_DENY.test(t));
+  const accept = picks.find(({ t }) => SKMW_MODAL_ACCEPT.test(t) && !SKMW_MODAL_DENY.test(t));
+  if (accept) return accept.c;
+  const nonDeny = picks.filter(({ t }) => !SKMW_MODAL_DENY.test(t));
+  if (denyExists) {
+    if (nonDeny.length === 1) return nonDeny[0].c;
+    const fb = nonDeny.find(({ t }) => SKMW_MODAL_FALLBACK.test(t));
+    return fb ? fb.c : null;
+  }
+  return picks.length === 1 ? picks[0].c : null;
 }
 
 // Global watcher: whenever Skool shows a "you haven't finished your post"
@@ -398,28 +442,10 @@ function startDiscardWatcher() {
       return;
     }
     lastScan = Date.now();
-    // Cheap selectors first. Skool styles modals with styled-components
-    // (hashed class names), so also deep-scan fixed-position overlays that
-    // contain a button and the discard text.
-    let modals = [
-      ...document.querySelectorAll(
-        '[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'
-      ),
-    ].filter((m) => SKMW_DISCARD_TEXT.test(skmwNorm(m.textContent)));
-    if (!modals.length) {
-      for (const div of document.querySelectorAll('div')) {
-        if (!div.querySelector('button, [role="button"]')) continue;
-        const st = window.getComputedStyle(div);
-        const r = div.getBoundingClientRect();
-        const coversVp = r.width >= window.innerWidth * 0.5 && r.height >= window.innerHeight * 0.5;
-        // Skool overlays: fixed with modest z-index, or absolute roots that
-        // cover most of the viewport (z-index gate >50 missed z=100..1100
-        // absolute containers — regression 2026-10-25).
-        if (!((st.position === 'fixed' && (parseInt(st.zIndex, 10) > 10 || coversVp))
-              || (st.position === 'absolute' && coversVp))) continue;
-        if (SKMW_DISCARD_TEXT.test(skmwNorm(div.textContent))) modals.push(div);
-      }
-    }
+    // Shared guard discovery (selector pass + deep-scan fallback) — the
+    // deep scan was moved verbatim into skmwFindGuardModals() so all three
+    // close paths see the same modals.
+    const modals = skmwFindGuardModals();
     if (!modals.length) return;
     for (const modal of modals) {
       const btn = skmwFindAccept(modal);
@@ -437,9 +463,9 @@ function startDiscardWatcher() {
     // Pre-paint kill switch: during a scheduled composer close, hide the
     // guard modal and accept it the moment it mounts — no visible flash.
     if (Date.now() < skmwHideGuardsUntil) {
-      const hits = [
-        ...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [aria-modal="true"], [class*="modal" i], [class*="dialog" i], [class*="confirm" i]'),
-      ].filter((m) => SKMW_DISCARD_TEXT.test(skmwNorm(m.textContent)));
+      // Same discovery as check() — the pre-paint window is exactly when an
+      // sc-* modal without role/class mounts, so the deep scan matters here.
+      const hits = skmwFindGuardModals();
       for (const m of hits) {
         m.style.display = 'none';
         const btn = skmwFindAccept(m) || skmwAcceptHidden(m);
@@ -1974,7 +2000,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.40');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.41');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
