@@ -64,6 +64,25 @@ Baseline на момент правки: 1 установка, 0 оценок, �
 
 Дополнительно: Google-поиск `site:chromewebstore.google.com skool` — видна ли карточка в индексе.
 
+## Google-запросы (веб-поиск, не витрина)
+
+Замер 2026-11-04, до правки листинга. Вывод: карточка в Google не видна **ни по одному запросу**; выдачу делят Postiz, StickyHive (сайт + их посты в skool-сообществах), YouTube-туториалы и сам skool.com. CWS-карточки конкурентов всплывают только по запросам с «chrome extension» / «extensions».
+
+| Запрос | Кто в топе Google сейчас | Наша карточка | Шанс / комментарий |
+|--------|--------------------------|---------------|---------------------|
+| skool chrome extension | CWS-карточки (Skool Extensions, Skool Focus), статья StickyHive | не видна | Высокий: интент ровно наш, в топе уже лежат карточки стора |
+| best skool extensions | stickyhive.ai/skool/chrome-extension, их же статья в skool.com | не видна | Средний: топ занят SEO-страницами StickyHive |
+| skool post scheduler | postiz.com/channels/skool, сравнение StickyHive | не видна | Средний: два сильных лендинга, но обе — платные тула |
+| schedule skool posts | Postiz, YouTube-туториалы, skool.com | не видна | Средний: много how-to контента, расширения в топе нет |
+| how to schedule posts on skool | YouTube, Postiz, посты в skool.com | не видна | Низкий: информационный интент, не «поставить расширение» |
+| skool ai post generator | никого: все ответы = «у Skool нет AI-генератора» | не видна | **Свободная ниша**: наш тула — буквально ответ на запрос |
+| skool ai writer | сообщества про AI-писательство внутри skool.com | не видна | Низкий в Google: интент другой (в CWS-поиске ключ работает) |
+| skool content calendar | YouTube, classroom-посты skool.com | не видна | Низко-средний: интент «стратегия», не инструмент |
+| skool automation tools | stickyhive.ai, skool.com/skool-automation, Make/n8n | не видна | Низкий: территория Make/n8n, наша фича иная |
+| отложенные посты skool (RU) | help.skool.com (EN!), StickyHive (EN) | не видна | Средний: русскоязычных тулов в выдаче нет вообще |
+
+Пересобрать таблицу через 3–4 недели после аппрува листинга (Google переиндексирует карточку с новым title `AI Writer & Scheduler`). Главная внешняя зависимость — установки и рейтинг: при 1 установке карточка в Google почти не ранжируется, какими бы ни были тексты.
+
 ## Phase B (следующий релиз v1.1.42+, не срочно)
 
 Синхронизировать хвосты `extName` в `_locales/*/messages.json` с новыми именами листинга (сейчас там старый «AI Posts & Scheduling» / «ИИ-посты и расписание»). Делается вместе с ближайшим функциональным релизом, отдельный релиз ради этого не поднимать.
