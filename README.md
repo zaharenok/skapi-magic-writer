@@ -51,6 +51,10 @@ Privacy properties, precisely:
 - **No content.** Events carry only booleans/enums (feature flags, error
   class) and the extension version. No post text, prompts, titles, community
   names/slugs or URLs.
+- **Whitelist enforced at the sender.** The service worker sends only the
+  events and properties declared in `EVENT_SPECS`; unknown events, undeclared
+  property keys and wrong types are dropped before any network — a buggy or
+  hostile content-script message cannot push arbitrary data.
 - **IP and GeoIP.** PostHog's ingest endpoint receives the client IP with
   every request. Each event sets `$geoip_disable: true` so no country/city
   enrichment is stored; additionally set **IP data capture: discard** in the
