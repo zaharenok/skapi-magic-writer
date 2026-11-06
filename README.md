@@ -34,6 +34,24 @@ pasted anywhere**. A default community slug is the only optional Options entry
 4. (Optional) Open the extension's **Options** to set a default community slug
 5. Make sure you're logged in to **skool.com**, then open a community — the ✨ / 📅 buttons appear next to the composer
 
+## Analytics (PostHog, optional, off by default)
+
+`analytics.js` is a tiny anonymous PostHog client. It is **off** until a
+project token is pasted into `POSTHOG_PROJECT_TOKEN` (with `POSTHOG_HOST`
+pointing at the right cloud region). While empty, every call is a no-op.
+
+- Anonymous: random UUID per install, `$process_person_profile: false` — no
+  person profiles, no emails/usernames, no post text or community data.
+- Events: `extension_installed` / `extension_updated`, `skool_opened`,
+  `magic_dialog_opened`, `generate_started` / `generate_succeeded` /
+  `generate_failed`, `post_inserted`, `post_scheduled`,
+  `scheduled_post_updated`, `scheduled_post_published`.
+- Transport: the service worker POSTs to `{host}/i/v0/e/` (content scripts
+  forward via messages because skool.com's CSP blocks direct calls).
+- Note: the two PostHog ingest hosts in `host_permissions` are a new
+  permission — Chrome may ask existing users to re-approve the extension on
+  update.
+
 ## Status
 
 - v0.1 — Magic Post + Schedule + calendar popover (list with upcoming/sent/failed tabs)
