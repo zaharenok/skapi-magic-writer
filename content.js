@@ -1,5 +1,5 @@
 /**
- * Skool Magic Writer — content script (v1.1.41)
+ * Skool Magic Writer — content script (v1.1.42)
  *
  * Lives entirely inside Skool (no popup). Injects two buttons next to the
  * composer (✨ Magic Post, 📅 Schedule) and a calendar icon in the top bar.
@@ -60,8 +60,10 @@ function clearComposer() {
 
 async function closeComposer() {
   // Skool shows a confirmation modal when closing a composer. We clear the
-  // composer first, intercept window.confirm, and auto-click the modal's
-  // accept button if Skool shows a custom confirmation dialog.
+  // composer first, intercept window.confirm (best-effort: content scripts
+  // live in an isolated world — Skool's page calls its OWN confirm in the
+  // main world; injectConfirmGuardPatch() covers that case), and auto-click
+  // the modal's accept button if Skool shows a custom confirmation dialog.
   const originalConfirm = window.confirm;
   window.confirm = () => true;
   try {
@@ -485,6 +487,28 @@ function startDiscardWatcher() {
   // toggling style/class — childList alone never fires for that (regression
   // 2026-10-25: the modal showed again despite the watcher being armed).
   obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+}
+
+// Main-world confirm guard: overriding window.confirm in THIS isolated
+// world (closeComposer) never intercepts Skool's own calls. Repro
+// 2026-11-06: scheduling a post closes the composer and Skool fires the
+// NATIVE confirm "You haven't finished your post yet. Do you want to leave
+// without finishing?" — neither the DOM discard watcher nor the
+// isolated-world patch can see it, so the dialog blocked the user
+// mid-schedule. Inject guard_patch.js (web_accessible_resource) as
+// <script src>: it runs in the MAIN world and auto-accepts ONLY that
+// composer prompt; every other confirm passes through untouched.
+function injectConfirmGuardPatch() {
+  window.addEventListener('skmw:confirm-guard', () => toast('🗑 Draft discarded'));
+  try {
+    const s = document.createElement('script');
+    s.src = chrome.runtime.getURL('guard_patch.js');
+    s.addEventListener('load', () => s.remove());
+    (document.head || document.documentElement).appendChild(s);
+    console.log('[skmw] main-world confirm guard injected');
+  } catch (e) {
+    console.warn('[skmw] confirm guard injection failed:', e);
+  }
 }
 
 function toast(msg) {
@@ -1992,6 +2016,7 @@ function observe() {
   obs.observe(document.body, { childList: true, subtree: true });
 }
 async function init() {
+  injectConfirmGuardPatch();
   reportEvent('skool_open');
   injectStyles();
   observe();
@@ -2000,7 +2025,7 @@ async function init() {
   setTimeout(() => { injectButtons(); injectScheduleInComposer(); }, 1500);
   await loadScheduled();
   setInterval(loadScheduled, 120000);
-  console.log('✨ [Skool Magic Writer] loaded — v1.1.41');
+  console.log('✨ [Skool Magic Writer] loaded — v1.1.42');
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
