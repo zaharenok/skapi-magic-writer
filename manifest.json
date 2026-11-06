@@ -11,7 +11,9 @@
   ],
   "host_permissions": [
     "https://*.skool.com/*",
-    "https://api.skapi.pro/*"
+    "https://api.skapi.pro/*",
+    "https://us.i.posthog.com/*",
+    "https://eu.i.posthog.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -36,6 +38,7 @@
         "https://*.skool.com/*"
       ],
       "js": [
+        "analytics.js",
         "content.js"
       ],
       "run_at": "document_idle"
