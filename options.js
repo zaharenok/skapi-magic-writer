@@ -12,3 +12,14 @@ document.getElementById('openWelcome').addEventListener('click', () => {
 document.getElementById('joinCommunity').addEventListener('click', () => {
   chrome.tabs.create({ url: 'https://www.skool.com/skoolmagicwriter/about' });
 });
+
+// Usage-analytics opt-out (skmw_analytics_off in chrome.storage.local).
+const analyticsOff = document.getElementById('analyticsOff');
+if (analyticsOff) {
+  chrome.storage.local.get(['skmw_analytics_off'], (r) => {
+    analyticsOff.checked = !!(r && r.skmw_analytics_off);
+  });
+  analyticsOff.addEventListener('change', () => {
+    chrome.storage.local.set({ skmw_analytics_off: analyticsOff.checked });
+  });
+}
