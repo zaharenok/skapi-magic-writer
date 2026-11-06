@@ -726,6 +726,7 @@ async function openMagicDialog() {
   if (dialogOpen) return;
   dialogOpen = true;
   reportEvent('magic_open');
+  skmwTrack('magic_dialog_opened');
 
   const overlay = el(`<div class="skmw-overlay"></div>`);
   const modal = el(`<div class="skmw-modal">
@@ -839,16 +840,24 @@ async function openMagicDialog() {
       }
       const body = { prompt, language: (navigator.language || 'en').split('-')[0].toLowerCase() };
       if (communityContext) body.community_context = communityContext;
+      skmwTrack('generate_started', { want_title: wantTitle, length: lenSel, used_context: wantContext });
       const data = await apiRequest('/ai/generate', { method: 'POST', body });
       if (!data.success || !data.text) throw new Error(data.error || 'No text returned');
       const attachGif = document.getElementById('skmw-magic-gif').checked;
    close();
       await insertIntoComposer(data.text, attachGif);
+      skmwTrack('generate_succeeded', { want_title: wantTitle, length: lenSel, used_context: wantContext });
+      skmwTrack('post_inserted', { attach_gif: attachGif });
       toast(attachGif ? '✅ Post generated and inserted (+ GIF)' : '✅ Post generated and inserted');
     } catch (e) {
       // Context died mid-run (extension reloaded/updated): the tab reloads
       // itself via handleContextLost — a raw error here would just flash.
       if (/context invalidated/i.test(e.message || '')) return;
+      skmwTrack('generate_failed', {
+        reason: /subscription_required/.test(e.message) ? 'subscription_required'
+          : /pro_feature_required/.test(e.message) ? 'pro_feature_required'
+          : /^API \d+$/.test(e.message || '') ? 'api_error' : 'other',
+      });
       showErr(e.message);
       goBtn.disabled = false;
       loading.style.display = 'none';
@@ -1283,6 +1292,7 @@ async function openScheduleDialog(post = null, prefillText = null) {
         await apiRequest('/scheduled-posts', { method: 'PUT', body: { ...putBody, id: post.id } });
       }
       else await apiRequest('/scheduled-posts', { method: 'POST', body });
+      skmwTrack(isEdit ? 'scheduled_post_updated' : 'post_scheduled', { has_gif: !!gifUrl, email_members: emailMembers });
       close(true);
       toast(isEdit ? '✅ Post updated' : '✅ Post scheduled');
       refreshCalendar();
@@ -1357,6 +1367,7 @@ function ding() {
   } catch (_) {}
 }
 function notifyPublished(post) {
+  skmwTrack('scheduled_post_published');
   const what = (post.title || (post.content || '').split('\n')[0] || 'Your post').slice(0, 90);
   try { toast(`✅ Published: ${what}`); } catch (_) {}
   try { chrome.runtime.sendMessage({ type: 'SKMW_NOTIFY', title: chrome.i18n.getMessage('extName') || 'Skool Magic Writer', message: `Post published: ${what}` }, () => void chrome.runtime.lastError); } catch (_) {}
@@ -1993,6 +2004,7 @@ function observe() {
 }
 async function init() {
   reportEvent('skool_open');
+  skmwTrack('skool_opened');
   injectStyles();
   observe();
   startDiscardWatcher();
