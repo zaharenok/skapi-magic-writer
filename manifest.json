@@ -36,6 +36,7 @@
         "https://*.skool.com/*"
       ],
       "js": [
+        "analytics.js",
         "content.js"
       ],
       "run_at": "document_idle"

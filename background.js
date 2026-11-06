@@ -3,6 +3,8 @@
 // user never pastes anything. Also opens the Options page on install so they
 // can set a default community slug (optional; auto-detected from URL otherwise).
 
+importScripts('analytics.js');
+
 const SKOOL_DOMAIN = '.skool.com';
 
 const API_BASE = 'https://api.skapi.pro';
@@ -41,6 +43,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({ ok: true });
     return true;
   }
+  if (msg?.type === 'SKMW_ANALYTICS') {
+    // Anonymous PostHog event from a content script (page CSP blocks direct
+    // calls; the SW is exempt). No-op while analytics.js has no token set.
+    skmwAnalyticsSend(msg.event, msg.properties).then(() => sendResponse({ ok: true }));
+    return true; // async response
+  }
   if (msg?.type === 'SKMW_FETCH') {
     // Proxy api.skapi.pro calls: content scripts run in the page context and
     // hit skool.com's CSP (connect-src). The service worker is exempt.
@@ -74,4 +82,8 @@ chrome.runtime.onInstalled.addListener((details) => {
     // extension picks up the auth_token session cookie (see welcome.js).
     chrome.tabs.create({ url: chrome.runtime.getURL('welcome.html') });
   }
+  skmwTrack(details.reason === 'update' ? 'extension_updated' : 'extension_installed', {
+    reason: details.reason,
+    prev_version: details.previousVersion || '',
+  });
 });
