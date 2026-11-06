@@ -1,15 +1,23 @@
-// Skool Magic Writer — PostHog analytics (minimal, anonymous, optional).
+// Skool Magic Writer — PostHog analytics (minimal, pseudonymous, optional).
 //
 // Design:
 // - OFF until a project token is pasted below. While POSTHOG_PROJECT_TOKEN is
 //   empty every call is a no-op, so shipping this file changes nothing by
 //   itself.
-// - Anonymous mode: events go with $process_person_profile = false and a
-//   random UUID (chrome.storage.local) as distinct_id — no person profiles,
-//   no identify calls.
+// - Pseudonymous, not anonymous: events go with $process_person_profile =
+//   false (PostHog creates no person profile), but distinct_id is a random
+//   UUID per install persisted in chrome.storage.local, so events from one
+//   install are linkable to each other. No identify calls, no emails or
+//   usernames.
+// - $geoip_disable: true on every event, so PostHog's GeoIP enrichment does
+//   not add country/city. The ingest endpoint still receives the client IP
+//   with each request; recommend setting "IP data capture: discard" in the
+//   PostHog project settings (EU orgs default to discard).
 // - No post text, titles, prompts, community names/slugs, URLs, emails or
 //   usernames are ever sent. Properties are booleans/enums and the extension
 //   version only.
+// - Opt-out: setting `skmw_analytics_off` in chrome.storage.local (Options
+//   page checkbox) stops all sending.
 // - Transport: the service worker does the fetch (content scripts hit
 //   skool.com's CSP connect-src; the SW is exempt). Content scripts call
 //   skmwTrack(), which forwards via runtime messages.
@@ -22,6 +30,7 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com'; // EU Cloud; use https://us.i.p
 
 (function (global) {
   const DISTINCT_KEY = 'skmw_ph_distinct_id';
+  const OPTOUT_KEY = 'skmw_analytics_off';
 
   function enabled() {
     return !!POSTHOG_PROJECT_TOKEN;
@@ -53,11 +62,24 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com'; // EU Cloud; use https://us.i.p
     });
   }
 
+  function isOptedOut() {
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get([OPTOUT_KEY], (r) => {
+          resolve(!chrome.runtime.lastError && !!(r && r[OPTOUT_KEY]));
+        });
+      } catch (_) {
+        resolve(false);
+      }
+    });
+  }
+
   // Sends one event. Runs in the service worker. Fire-and-forget: analytics
   // must never break the product, so every failure is swallowed.
   async function send(event, properties) {
     if (!enabled() || !event) return;
     try {
+      if (await isOptedOut()) return;
       const distinctId = await getDistinctId();
       if (!distinctId) return;
       await fetch(POSTHOG_HOST.replace(/\/+$/, '') + '/i/v0/e/', {
@@ -70,6 +92,7 @@ const POSTHOG_HOST = 'https://eu.i.posthog.com'; // EU Cloud; use https://us.i.p
           properties: Object.assign(
             {
               $process_person_profile: false,
+              $geoip_disable: true,
               ext_version: chrome.runtime.getManifest().version,
             },
             properties || {}
