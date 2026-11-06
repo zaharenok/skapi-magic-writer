@@ -36,23 +36,51 @@ pasted anywhere**. A default community slug is the only optional Options entry
 
 ## Analytics (PostHog, optional, off by default)
 
-`analytics.js` is a tiny anonymous PostHog client. It is **off** until a
+`analytics.js` is a tiny PostHog capture client. It is **off** until a
 project token is pasted into `POSTHOG_PROJECT_TOKEN` (with `POSTHOG_HOST`
-pointing at the right cloud region). While empty, every call is a no-op.
+pointing at the cloud region of that project — do not guess the region).
+While empty, every call is a no-op.
 
-- Anonymous: random UUID per install, `$process_person_profile: false` — no
-  person profiles, no emails/usernames, no post text or community data.
-- Events: `extension_installed` / `extension_updated`, `skool_opened`,
-  `magic_dialog_opened`, `generate_started` / `generate_succeeded` /
-  `generate_failed`, `post_inserted`, `post_scheduled`,
-  `scheduled_post_updated`, `scheduled_post_published`.
-- Transport: the service worker POSTs to `{host}/i/v0/e/` (content scripts
-  forward via messages because skool.com's CSP blocks direct calls).
-- Note: the two PostHog ingest hosts in `host_permissions` are a new
-  permission — Chrome may ask existing users to re-approve the extension on
-  update.
+Privacy properties, precisely:
 
-## Status
+- **Pseudonymous, not anonymous.** `distinct_id` is a random UUID generated
+  once per install and persisted in `chrome.storage.local`, so events from
+  one install are linkable to each other. Events are sent with
+  `$process_person_profile: false`, so PostHog stores them without a person
+  profile. No identify calls, no emails, no usernames.
+- **No content.** Events carry only booleans/enums (feature flags, error
+  class) and the extension version. No post text, prompts, titles, community
+  names/slugs or URLs.
+- **IP and GeoIP.** PostHog's ingest endpoint receives the client IP with
+  every request. Each event sets `$geoip_disable: true` so no country/city
+  enrichment is stored; additionally set **IP data capture: discard** in the
+  PostHog project settings (PostHog EU organizations default to discard).
+- **Opt-out.** Options page → "Disable usage analytics"
+  (`skmw_analytics_off` in `chrome.storage.local`) stops all sending.
+
+Events: `extension_installed` / `extension_updated`, `skool_opened`,
+`magic_dialog_opened`, `generate_started` / `generate_succeeded` /
+`generate_failed`, `post_inserted`, `post_scheduled`,
+`scheduled_post_updated`, `scheduled_post_published`.
+
+Transport: the service worker POSTs to `{host}/i/v0/e/` (content scripts
+forward via runtime messages because skool.com's CSP blocks direct calls).
+
+Relation to the existing telemetry: `reportEvent()` (`POST /ext/event` on
+api.skapi.pro) already fires one-time-per-user pings for `magic_open` and
+`skool_open` — it answers "has any user ever opened the dialog". The PostHog
+events add the per-occurrence funnel around generation (start/success/
+failure with error class), insertion, scheduling and publishing, which the
+existing pings do not cover.
+
+No new permissions: PostHog's ingest endpoints answer CORS preflights from
+any origin (verified for `eu.i.posthog.com` and `us.i.posthog.com` against a
+`chrome-extension://` Origin), so the service worker can POST without
+`host_permissions` entries and this PR adds none — no re-approval prompt on
+update. Ad/tracker blockers may drop these requests on some machines; the
+code treats every failure as "drop the event".
+
+## Status## Status
 
 - v0.1 — Magic Post + Schedule + calendar popover (list with upcoming/sent/failed tabs)
 - Next: drag-and-drop week grid for the calendar
